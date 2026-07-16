@@ -1036,3 +1036,239 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   .grid-analyse>.analysis-panel:nth-child(3) .scientific-chart svg{height:240px!important;min-height:240px!important}
   .guidance-layout{grid-template-columns:minmax(0,1.22fr) minmax(410px,.78fr)}
 }
+
+/* Interview demo refinement: make the CAVE identity explicit, strengthen the
+ * measured-event challenge, and add a contextual PM reference without implying
+ * that schematic GIS marks are measured fields.
+ */
+.topbar{
+  grid-template-columns:360px minmax(560px,1fr) max-content;
+}
+.brand-wordmark{
+  font-size:22px;
+  line-height:1.02;
+}
+.brand-wordmark span{
+  font-size:14px;
+}
+.brand-subtitle{
+  font-size:12px;
+}
+.life-button{
+  font-size:12px;
+  gap:8px;
+}
+.life-index{
+  width:32px;
+  height:32px;
+}
+.atlas-edition span{
+  font-size:13px;
+}
+.atlas-edition strong{
+  font-size:10.5px;
+}
+.entry-brand span{
+  font-size:22px;
+}
+.entry-brand small{
+  font-size:14px;
+}
+.entry-meta{
+  font-size:11px;
+  letter-spacing:.06em;
+}
+.boot-wordmark{
+  font-size:clamp(26px,2.35vw,38px);
+}
+.boot-layout .entry-copy h1{
+  max-width:720px;
+  font-size:clamp(40px,4.45vw,72px);
+  line-height:.94;
+  letter-spacing:-.04em;
+}
+.boot-layout .entry-copy .entry-thesis{
+  max-width:620px;
+  font-size:clamp(14px,1vw,18px);
+  color:rgba(237,241,237,.68);
+}
+.boot-readout{
+  font-size:clamp(10px,.72vw,12px);
+}
+.grid-challenge{
+  grid-template-columns:340px minmax(0,1fr);
+}
+.grid-challenge .case-list{
+  grid-template-rows:none;
+  align-content:start;
+  gap:12px;
+  padding:14px;
+}
+.grid-challenge .case-card{
+  justify-content:start;
+  gap:8px;
+  min-height:0;
+  padding:18px;
+  background:#f6f9f5;
+  border:1px solid var(--soft-line);
+}
+.grid-challenge .case-card.selected{
+  border:1px solid #6f9d92;
+}
+.case-place{
+  display:block;
+  color:var(--teal);
+  font:700 12px/1.15 var(--font-editorial);
+}
+.case-card-meta{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:5px;
+  padding-top:4px;
+  border-top:1px solid var(--soft-line);
+}
+.case-card-meta span{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  color:#53635d;
+  font:400 11px/1.25 var(--font-editorial);
+}
+.case-card-meta b{
+  color:#263b35;
+  font-weight:700;
+}
+.challenge-metrics{
+  grid-template-columns:repeat(3,minmax(0,1fr));
+}
+.event-explorer>.panel-body{
+  display:grid;
+  grid-template-rows:minmax(245px,1fr) auto auto;
+  gap:10px;
+  min-height:0;
+  padding-bottom:12px;
+}
+.event-explorer .scientific-chart svg{
+  height:clamp(250px,31vh,370px)!important;
+  min-height:250px!important;
+}
+.case-context-panel{
+  min-height:132px;
+  display:grid;
+  grid-template-columns:minmax(220px,.38fr) minmax(0,1fr);
+  gap:14px;
+  padding-top:10px;
+  border-top:1px solid var(--soft-line);
+}
+.case-route-map{
+  margin:0;
+  min-width:0;
+  background:#e5ece8;
+  overflow:hidden;
+}
+.case-route-map svg{
+  display:block;
+  width:100%;
+  height:132px;
+}
+.case-route-map rect{
+  fill:#e5ece8;
+}
+.case-route-map text{
+  fill:#465a53;
+  font:700 8px/1 var(--font-editorial)!important;
+  letter-spacing:.02em;
+}
+.case-route-map .map-caption{
+  fill:#65736e;
+  font-weight:400!important;
+}
+.case-route-map .map-grid{
+  fill:none;
+  stroke:rgba(23,38,34,.13);
+  stroke-width:1;
+}
+.case-route-map .map-land{
+  fill:#f6f8f4;
+  stroke:#90a79e;
+  stroke-width:1.2;
+}
+.case-route-map .map-plume{
+  fill:none;
+  stroke:var(--smoke);
+  stroke-width:5;
+  stroke-linecap:round;
+  stroke-dasharray:4 10;
+  opacity:.75;
+}
+.case-route-map .map-source{
+  fill:#b64d32;
+  stroke:#fff6ef;
+  stroke-width:2;
+}
+.case-route-map .map-site{
+  fill:var(--teal);
+  stroke:#f5fffb;
+  stroke-width:2;
+}
+.case-route-map .map-ring{
+  fill:none;
+  stroke:#0f6c62;
+  stroke-width:1;
+  stroke-dasharray:3 4;
+  opacity:.55;
+}
+.case-context-copy{
+  min-width:0;
+  display:grid;
+  align-content:start;
+  gap:8px;
+}
+.case-context-heading{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.case-context-heading>span{
+  color:#263b35;
+  font:700 14px/1.1 var(--font-editorial);
+}
+.case-context-copy p{
+  margin:0;
+  color:#465a53;
+  font:400 12px/1.35 var(--font-editorial);
+}
+.case-context-copy dl{
+  margin:0;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:9px;
+}
+.case-context-copy div{
+  min-width:0;
+}
+.case-context-copy dt{
+  color:#66756f;
+  font:400 10px/1.1 var(--font-editorial);
+}
+.case-context-copy dd{
+  margin:3px 0 0;
+  color:#263b35;
+  font:700 11px/1.25 var(--font-editorial);
+}
+
+@media(max-width:1500px){
+  .topbar{grid-template-columns:330px minmax(520px,1fr) max-content}
+  .brand-wordmark{font-size:19px}
+  .brand-wordmark span{font-size:13px}
+  .brand-subtitle{font-size:10.5px}
+  .life-button{font-size:10.5px}
+  .life-index{width:29px;height:29px}
+  .grid-challenge{grid-template-columns:310px minmax(0,1fr)}
+  .event-explorer>.panel-body{grid-template-rows:minmax(220px,1fr) auto auto}
+  .event-explorer .scientific-chart svg{height:clamp(230px,29vh,330px)!important;min-height:230px!important}
+  .case-context-panel{grid-template-columns:200px minmax(0,1fr);min-height:118px}
+  .case-route-map svg{height:118px}
+  .case-context-copy dl{grid-template-columns:1fr 1fr}
+}

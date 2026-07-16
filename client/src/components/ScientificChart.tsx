@@ -17,6 +17,7 @@ interface ScientificChartProps {
   yLabel?: string;
   xLabel?: string;
   maxY?: number;
+  minY?: number;
   markerIndex?: number;
   range?: { start: number; end: number };
   onPointSelect?: (index: number) => void;
@@ -48,6 +49,7 @@ export function ScientificChart({
   yLabel,
   xLabel,
   maxY,
+  minY,
   markerIndex,
   range,
   onPointSelect,
@@ -72,12 +74,15 @@ export function ScientificChart({
   const width = Math.max(compact ? 80 : 280, measuredWidth || chartWidth);
   const length = Math.max(2, ...series.map((item) => item.values.length));
   const finite = series.flatMap((item) => item.values.filter((value): value is number => value != null && Number.isFinite(value)));
-  const yMax = maxY ?? Math.max(1, ...finite) * 1.08;
+  const yMin = minY ?? 0;
+  const finiteMax = Math.max(yMin + 1, ...finite);
+  const yMax = Math.max(yMin + 1, maxY ?? finiteMax * 1.08);
+  const ySpan = yMax - yMin;
   const chartPad = compact ? { left: 8, right: 8, top: 8, bottom: 8 } : PAD;
   const innerWidth = width - chartPad.left - chartPad.right;
   const innerHeight = height - chartPad.top - chartPad.bottom;
   const x = (index: number) => chartPad.left + (index / (length - 1)) * innerWidth;
-  const y = (value: number) => chartPad.top + innerHeight - (value / yMax) * innerHeight;
+  const y = (value: number) => chartPad.top + innerHeight - ((value - yMin) / ySpan) * innerHeight;
   const ticks = compact ? [] : [0, 0.25, 0.5, 0.75, 1];
   const active = hovered ?? markerIndex;
   const activeValues = active == null ? [] : series.map((item) => item.values[active]);
@@ -126,7 +131,7 @@ export function ScientificChart({
         {ticks.map((tick) => (
           <g key={tick}>
             <line x1={chartPad.left} x2={width - chartPad.right} y1={chartPad.top + innerHeight * tick} y2={chartPad.top + innerHeight * tick} stroke="#bfc4bf" strokeWidth="0.65" />
-            <text x={chartPad.left - 8} y={chartPad.top + innerHeight * tick + 3} textAnchor="end" className="axis-text">{Math.round(yMax * (1 - tick))}</text>
+            <text x={chartPad.left - 8} y={chartPad.top + innerHeight * tick + 3} textAnchor="end" className="axis-text">{Math.round(yMax - ySpan * tick)}</text>
           </g>
         ))}
         {series.map((item) => (

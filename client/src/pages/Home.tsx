@@ -30,9 +30,32 @@ import {
 
 const STEPS = ["Challenge", "Design", "Run", "Analyse"];
 const TARGET_WINDOW_HOURS = 24;
+const PM25_24H_GUIDELINE = 15;
 const EVENT_CONTEXT: Record<SelectedCase, string> = {
   nyc2023: "Canadian wildfire smoke · New York sky turned orange",
   london2022: "Wennington wildfire, East London · UK's first 40 °C day",
+};
+const CASE_GIS_META: Record<SelectedCase, {
+  place: string;
+  coordinate: string;
+  sourceRegion: string;
+  transport: string;
+  operationalCue: string;
+}> = {
+  nyc2023: {
+    place: "Queens, New York",
+    coordinate: "40.74°N · 73.82°W",
+    sourceRegion: "Canadian wildfire smoke transport",
+    transport: "A long-range plume episode moves from boreal fire regions into a dense urban receptor site.",
+    operationalCue: "Treat outdoor PM as the measured boundary condition before testing indoor protection.",
+  },
+  london2022: {
+    place: "Bloomsbury, London",
+    coordinate: "51.52°N · 0.13°W",
+    sourceRegion: "Urban-edge wildfire + heatwave",
+    transport: "A local-to-regional fire and heat episode stresses the smoke, heat and fresh-air trade-off.",
+    operationalCue: "Use the CAVE exterior setpoint to test ventilation choices under simultaneous heat stress.",
+  },
 };
 const EVENT_EXTERNAL_TEMPERATURE: Record<SelectedCase, number> = {
   nyc2023: 29,
@@ -70,10 +93,42 @@ function formatTimestamp(timestamp: string) {
   return `${date.slice(5)} ${time}`;
 }
 
+function CaseRouteMap({ id }: { id: SelectedCase }) {
+  const meta = CASE_GIS_META[id];
+  const isNyc = id === "nyc2023";
+  return <figure className={`case-route-map case-route-${id}`} aria-label={`${meta.place} schematic smoke-transport context`}>
+    <svg viewBox="0 0 320 140" role="img">
+      <title>{meta.place} smoke transport schematic</title>
+      <rect x="0" y="0" width="320" height="140" rx="0" />
+      <path className="map-grid" d="M28 16v108M84 16v108M140 16v108M196 16v108M252 16v108M12 36h296M12 74h296M12 112h296" />
+      {isNyc ? <>
+        <path className="map-land" d="M33 19c33-11 76-8 103 8 34 20 39 47 68 54 27 7 43-7 71 6 18 8 26 22 30 34H37c-16-14-24-31-22-50 2-21 8-42 18-52Z" />
+        <path className="map-plume" d="M63 37C103 52 131 66 164 76c31 9 64 11 95 27" />
+        <circle className="map-source" cx="70" cy="38" r="8" />
+        <circle className="map-site" cx="260" cy="104" r="7" />
+        <path className="map-ring" d="M238 104a22 22 0 1 0 44 0a22 22 0 1 0-44 0M222 104a38 38 0 1 0 76 0a38 38 0 1 0-76 0" />
+        <text x="42" y="29">CANADA FIRE REGION</text>
+        <text x="220" y="127">QUEENS AQS</text>
+      </> : <>
+        <path className="map-land" d="M94 19c35-9 77 3 91 31 9 18 6 35 22 47 20 15 52 6 74 22H67c8-17 1-34 10-52 7-15 2-39 17-48Z" />
+        <path className="map-plume" d="M249 105C225 93 205 77 184 65c-29-15-56-20-89-24" />
+        <circle className="map-source" cx="247" cy="105" r="8" />
+        <circle className="map-site" cx="96" cy="42" r="7" />
+        <path className="map-ring" d="M78 42a18 18 0 1 0 36 0a18 18 0 1 0-36 0M64 42a32 32 0 1 0 64 0a32 32 0 1 0-64 0" />
+        <text x="68" y="30">BLOOMSBURY AURN</text>
+        <text x="204" y="126">EAST LONDON FIRE</text>
+      </>}
+      <text className="map-caption" x="14" y="130">SCHEMATIC GIS CUE · NOT A MEASURED SMOKE FIELD</text>
+    </svg>
+  </figure>;
+}
+
 function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdvance }: { state: ExperimentState; setState: React.Dispatch<React.SetStateAction<ExperimentState>>; sharedMinute: number; setSharedMinute: React.Dispatch<React.SetStateAction<number>>; onAdvance: () => void }) {
   const anchors = deriveMeasuredAnchors();
   const selected = getCaseDataset(state.selectedCase);
   const selectedPeak = peak(selected.pm25);
+  const selectedMeta = CASE_GIS_META[state.selectedCase];
+  const selectedMultiple = selectedPeak.value / PM25_24H_GUIDELINE;
   const targetWindow = fixedDayWindow(state.targetWindow.startIdx, selected.pm25.length);
   const selectCase = (id: SelectedCase) => {
     const next = getCaseDataset(id);
@@ -97,10 +152,14 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
         {(["nyc2023", "london2022"] as SelectedCase[]).map((id) => {
           const item = CASES[id];
           const itemPeak = peak(item.pm25);
+          const meta = CASE_GIS_META[id];
+          const anchorSummary = id === "nyc2023" ? `${anchors.nycRatio.toFixed(0)}× local baseline` : `O₃ peak ${anchors.londonO3Peak.value.toFixed(1)} µg/m³`;
           return <button key={id} className={`case-card case-${id} ${state.selectedCase === id ? "selected" : ""}`} onClick={() => selectCase(id)}>
+            <span className="case-place">{meta.place}</span>
             <h3>{item.title}</h3><p>{item.subtitle}</p><p className="event-context">{EVENT_CONTEXT[id]}</p>
             <div className="case-peak"><strong>{itemPeak.value.toFixed(1)}</strong><span>µg/m³<br />peak hourly PM₂.₅</span></div>
-            <div className="case-tags"><span className="tiny-tag">{item.site.split(" · ")[0]}</span></div>
+            <div className="case-card-meta"><span><b>{(itemPeak.value / PM25_24H_GUIDELINE).toFixed(id === "nyc2023" ? 0 : 1)}×</b> WHO 24 h line</span><span><b>{anchorSummary}</b> measured anchor</span></div>
+            <div className="case-tags"><span className="tiny-tag">{item.site.split(" · ")[0]}</span><span className="tiny-tag">{meta.coordinate}</span></div>
           </button>;
         })}
       </div>
@@ -109,7 +168,10 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
       <Panel className={`event-explorer event-${state.selectedCase}`} eyebrow="Event explorer" title={selected.title} action={<div className="button-row"><Provenance type="measured">Measured · {selected.sourceLabel}</Provenance><button className="primary-button" onClick={onAdvance}>Design experiment <ArrowRight size={13} /></button></div>}>
         <div className="panel-body">
           <ScientificChart
-            series={[{ label: "PM₂.₅ measured", values: selected.pm25, color: "#b64d32", width: 2.2 }]}
+            series={[
+              { label: "PM₂.₅ measured", values: selected.pm25, color: "#b64d32", width: 2.2 },
+              { label: "WHO 2021 24 h guideline", values: selected.pm25.map(() => PM25_24H_GUIDELINE), color: "#6d7f78", dashed: true, width: 1.4 },
+            ]}
             xLabels={selected.timestamps}
             yLabel="PM₂.₅ (µg/m³)"
             xLabel="Local time"
@@ -129,10 +191,23 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
               <span className="window-control-scale"><i>First available day</i><i>Fixed duration · 24 h</i><i>Last available day</i></span>
             </label>
           </div>
+          <aside className="case-context-panel">
+            <CaseRouteMap id={state.selectedCase} />
+            <div className="case-context-copy">
+              <div className="case-context-heading"><span>{selectedMeta.sourceRegion}</span><Provenance type="illustrative">Schematic GIS context</Provenance></div>
+              <p>{selectedMeta.transport}</p>
+              <dl>
+                <div><dt>Monitoring site</dt><dd>{selected.site}</dd></div>
+                <div><dt>Reference line</dt><dd>WHO 2021 PM₂.₅ 24 h guideline: {PM25_24H_GUIDELINE} µg/m³; used here as context, not an hourly compliance test.</dd></div>
+                <div><dt>Experiment cue</dt><dd>{selectedMeta.operationalCue}</dd></div>
+              </dl>
+            </div>
+          </aside>
         </div>
         <div className="metric-band challenge-metrics">
           <div className="metric"><label>Peak event</label><strong className="smoke">{selectedPeak.value.toFixed(1)} µg/m³</strong></div>
           <div className="metric"><label>Peak timestamp</label><strong>{formatTimestamp(selected.timestamps[selectedPeak.index])}</strong></div>
+          <div className="metric"><label>Guideline multiple</label><strong>{selectedMultiple.toFixed(state.selectedCase === "nyc2023" ? 0 : 1)}×</strong></div>
         </div>
       </Panel>
     </div>
@@ -296,7 +371,7 @@ function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setShare
   return <main className="screen analyse-screen" tabIndex={0} onWheel={handleWheel} onKeyDown={(event) => { if (event.key === "PageDown") { event.preventDefault(); setChapter(analysisChapter + 1); } if (event.key === "PageUp") { event.preventDefault(); setChapter(analysisChapter - 1); } }} aria-label="Analysis atlas. Scroll or use Page Up and Page Down to change evidence focus.">
     <div className="screen-grid grid-analyse">
       <Panel className={`analysis-panel ${analysisChapter === 0 ? "chapter-active" : "chapter-muted"}`} eyebrow="1. Air-exchange characterisation" action={<div className="button-row"><Provenance type="illustrative">Synthetic tracer</Provenance><Provenance type="model">ACH fit</Provenance></div>}>
-        <div className="analysis-content"><ScientificChart series={[{ label: "Measured tracer", values: tracer.points.map((p) => p.observed), color: "#202827" }, { label: "Exponential fit", values: tracer.points.map((p) => p.fitted), color: "#b64d32", dashed: true }]} markerIndex={Math.min(tracer.points.length - 1, Math.floor(sharedMinute / Math.max(1, simulation.indoorMinute.length / tracer.points.length)))} height={230} yLabel="CO₂ (ppm)" xLabel="Time (h)" /><div><div className="eyebrow">Air-change rate</div><div className="fit-number">{tracer.estimate.toFixed(2)}<small> h⁻¹</small></div><p className="mono muted">95% CI<br />[{Math.max(0, tracer.estimate - tracer.ci95).toFixed(2)}, {(tracer.estimate + tracer.ci95).toFixed(2)}]</p></div></div>
+        <div className="analysis-content"><ScientificChart series={[{ label: "Synthetic tracer observation", values: tracer.points.map((p) => p.observed), color: "#202827" }, { label: "Exponential fit", values: tracer.points.map((p) => p.fitted), color: "#b64d32", dashed: true }]} markerIndex={Math.min(tracer.points.length - 1, Math.floor(sharedMinute / Math.max(1, simulation.indoorMinute.length / tracer.points.length)))} height={230} minY={400} yLabel="CO₂ (ppm)" xLabel="Time (h)" /><div><div className="eyebrow">Air-change rate</div><div className="fit-number">{tracer.estimate.toFixed(2)}<small> h⁻¹</small></div><p className="mono muted">95% CI<br />[{Math.max(0, tracer.estimate - tracer.ci95).toFixed(2)}, {(tracer.estimate + tracer.ci95).toFixed(2)}]</p></div></div>
       </Panel>
       <Panel className={`analysis-panel ${analysisChapter === 1 ? "chapter-active" : "chapter-muted"}`} eyebrow="2. Parameter estimation" action={<Provenance type="model">Inverse model</Provenance>}>
         <div className="analysis-content"><div><ScientificChart series={inverseSeries} markerIndex={sharedMarker} range={sampledRange} height={180} yLabel="PM₂.₅ (µg/m³)" xLabel="Time" /><div className="eyebrow" style={{ marginTop: 8 }}>Residuals · indoor model − measurement</div><div className="residual-strip">{inverse.residuals.filter((_, i) => i % 25 === 0).map((value, index) => <i key={index} style={{ height: `${Math.max(1, Math.min(70, Math.abs(value) * 2))}px`, background: value > 0 ? "#b64d32" : "#0f6c62" }} />)}</div></div><div><div className="eyebrow">Fitted parameters</div><table className="parameter-table"><tbody><tr><td>Penetration P</td><td><b>{inverse.penetration.toFixed(2)}</b></td></tr><tr><td>Deposition kdep</td><td><b>{inverse.deposition.toFixed(2)} h⁻¹</b></td></tr></tbody></table></div></div>
@@ -437,15 +512,15 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
     <div className="boot-smoke-field" aria-hidden="true"><i /><i /><i /></div>
     <button className="boot-skip" onClick={() => setSkipped(true)}>Reveal complete plate</button>
     <header className="entry-header">
-      <div className="entry-brand"><img src={caveMarkUrl} alt="Wildfire Ventilation mark" /><span>Wildfire</span><i>/</i><small>Ventilation</small></div>
-      <div className="entry-meta"><span>Wildfire indoor safety</span><span>Demonstration protocol · 2026</span></div>
+      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE Wildfire</span><i>/</i><small>Workbench</small></div>
+      <div className="entry-meta"><span>Research Fellow interview · Dr Hao Sun</span><span>UCL CAVE · 2026</span></div>
     </header>
     <div className="boot-layout" aria-label="CAVE Experiment Workbench instrument boot sequence">
       <section className="entry-copy">
-        <div className="entry-kicker"><span>01</span> Evidence-led indoor exposure research</div>
-        <div className="boot-wordmark">Wildfire <span>Ventilation</span></div>
-        <h1>Reproduce Wildfire Smoke.<br />Test Indoor Response.</h1>
-        <p className="entry-thesis">Measured boundary conditions become experiments, evidence and ventilation decisions.</p>
+        <div className="entry-kicker"><span>01</span> UCL CAVE · Research Fellow interview</div>
+        <div className="boot-wordmark">CAVE Wildfire <span>Workbench</span></div>
+        <h1>Research Fellow Interview Demo for Wildfire Indoor Safety</h1>
+        <p className="entry-thesis">Prepared for Dr Hao Sun: measured wildfire smoke episodes become controlled CAVE experiments, model predictions and decision evidence.</p>
         <a
           className="entry-button"
           href="?screen=1"
@@ -453,7 +528,7 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
             event.preventDefault();
             beginEnter();
           }}
-        ><span>Begin Challenge protocol</span><ArrowRight size={18} /></a>
+        ><span>Open measured-event workbench</span><ArrowRight size={18} /></a>
         <div className="entry-hint">Press Enter · Select a measured exposure event</div>
       </section>
       <section className="boot-instrument">
@@ -462,11 +537,11 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
           <p style={{ "--boot-order": 0 } as React.CSSProperties}>Boundary-condition provenance</p>
           <p style={{ "--boot-order": 1 } as React.CSSProperties}>NEW YORK · 07 JUN 2023 · PM₂.₅ peak 410.1 µg/m³ <b>MEASURED</b></p>
           <p style={{ "--boot-order": 2 } as React.CSSProperties}>LONDON · 19 JUL 2022 · 40.3 °C · O₃ 142 µg/m³ <b>MEASURED</b></p>
-          <div className="boot-progress"><i /></div><span>2 measured events · 4-stage experiment protocol</span>
+          <div className="boot-progress"><i /></div><span>2 measured events · UCL CAVE experiment workflow</span>
         </div>
       </section>
     </div>
-    <footer className="entry-footer"><span>Measure</span><i /><span>Reconstruct</span><i /><span>Replay</span><i /><span>Analyse</span><b>01—04</b></footer>
+    <footer className="entry-footer"><span>Measure</span><i /><span>Design</span><i /><span>Replay</span><i /><span>Decide</span><b>01—04</b></footer>
   </main>;
 }
 
@@ -544,9 +619,9 @@ export default function Home() {
   return <div className="experience-shell"><div className="experience-stage">
     {!entered ? <EnteringPage onEnter={() => setEntered(true)} /> : <div className="workbench">
     <header className="topbar">
-      <button className="brand brand-button" onClick={() => setEntered(false)} aria-label="Return to entering page"><img className="brand-mark" src={caveMarkUrl} alt="Wildfire Ventilation mark" /><div><div className="brand-wordmark">Wildfire <span>Ventilation</span></div><div className="brand-subtitle">Indoor Safety & Environmental Resilience</div></div></button>
+      <button className="brand brand-button" onClick={() => setEntered(false)} aria-label="Return to entering page"><img className="brand-mark" src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><div><div className="brand-wordmark">CAVE Wildfire <span>Workbench</span></div><div className="brand-subtitle">Research Fellow interview · Dr Hao Sun</div></div></button>
       <nav className="lifecycle" aria-label="Experiment lifecycle">{STEPS.map((label, index) => <div key={label} className={`life-step ${screen === index + 1 ? "active" : ""} ${screen > index + 1 ? "done" : ""}`}><button className="life-button" onClick={() => setScreen(index + 1)}><span className="life-index">{screen > index + 1 ? "✓" : String(index + 1).padStart(2, "0")}</span>{label}</button></div>)}</nav>
-      <div className="atlas-edition"><span>Research atlas</span><strong>Edition 01 · 2026</strong></div>
+      <div className="atlas-edition"><span>UCL CAVE</span><strong>Research demo · 2026</strong></div>
     </header>
     <div className="status-strip"><span><i>Case</i>{dataset.title}</span><span><i>Shared context</i>{formatTimestamp(dataset.timestamps[sharedTimestampIndex])} · {selectedSensor}</span><span><i>Modelled air change</i>{simulation.params.totalAch.toFixed(2)} h⁻¹</span>{screen === 4 && <span className="analysis-status"><i>{ANALYSIS_CHAPTERS[analysisChapter].label}</i><b>{ANALYSIS_CHAPTERS[analysisChapter].note}</b></span>}{simulation.gapFilled && <span className="gap-note">Interpolated evidence gap</span>}</div>
     {screen === 1 && <ChallengeScreen state={state} setState={setState} sharedMinute={sharedMinute} setSharedMinute={setSharedMinute} onAdvance={advance} />}

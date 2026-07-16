@@ -150,36 +150,40 @@ function gaussian(random: () => number): number {
 
 export function generateAndFitCo2Decay(lambdaTrue: number, seed = ENGINE_SEED): TracerFit {
   const random = mulberry32(seed);
+  const baseline = 420;
+  const initial = 1800;
   const noiseSigma = 15;
   const samples = Array.from({ length: 121 }, (_, index) => {
     const t = index / 30;
-    const clean = 420 + (1800 - 420) * Math.exp(-lambdaTrue * t);
-    const observed = Math.max(421, clean + gaussian(random) * noiseSigma);
-    const excess = observed - 420;
+    const clean = baseline + (initial - baseline) * Math.exp(-lambdaTrue * t);
+    const observed = Math.max(baseline + 1, clean + gaussian(random) * noiseSigma);
+    const excess = observed - baseline;
     // Delta-method correction removes the second-order log bias introduced by
     // additive concentration noise while preserving the required linear log fit.
     const logObserved = Math.log(excess) + noiseSigma ** 2 / (2 * excess ** 2);
     return { t, observed, logObserved };
   });
-  const meanT = samples.reduce((sum, point) => sum + point.t, 0) / samples.length;
-  const meanY = samples.reduce((sum, point) => sum + point.logObserved, 0) / samples.length;
-  const sxx = samples.reduce((sum, point) => sum + (point.t - meanT) ** 2, 0);
+  const fitSamples = samples.filter((point) => point.observed - baseline > noiseSigma * 3);
+  const regressionSamples = fitSamples.length >= 3 ? fitSamples : samples.slice(0, 10);
+  const meanT = regressionSamples.reduce((sum, point) => sum + point.t, 0) / regressionSamples.length;
+  const meanY = regressionSamples.reduce((sum, point) => sum + point.logObserved, 0) / regressionSamples.length;
+  const sxx = regressionSamples.reduce((sum, point) => sum + (point.t - meanT) ** 2, 0);
   const slope =
-    samples.reduce((sum, point) => sum + (point.t - meanT) * (point.logObserved - meanY), 0) / sxx;
+    regressionSamples.reduce((sum, point) => sum + (point.t - meanT) * (point.logObserved - meanY), 0) / sxx;
   const intercept = meanY - slope * meanT;
-  const residualSse = samples.reduce(
+  const residualSse = regressionSamples.reduce(
     (sum, point) => sum + (point.logObserved - (intercept + slope * point.t)) ** 2,
     0,
   );
-  const classicSlopeSe = Math.sqrt(residualSse / (samples.length - 2) / sxx);
-  const robustVariance = samples.reduce((sum, point) => {
+  const classicSlopeSe = Math.sqrt(residualSse / (regressionSamples.length - 2) / sxx);
+  const robustVariance = regressionSamples.reduce((sum, point) => {
     const centred = point.t - meanT;
-    const leverage = 1 / samples.length + centred ** 2 / sxx;
+    const leverage = 1 / regressionSamples.length + centred ** 2 / sxx;
     const residual = point.logObserved - (intercept + slope * point.t);
     return sum + centred ** 2 * residual ** 2 / (1 - leverage) ** 2;
   }, 0) / sxx ** 2;
   const slopeSe = Math.max(classicSlopeSe, Math.sqrt(robustVariance));
-  const estimate = -slope;
+  const estimate = clamp(-slope, 0.03, 8);
   // Monte-Carlo calibrated 95% half-width for this fixed 30 s / 4 h protocol.
   // The 2.35 factor accounts for the heavier tails caused by transforming
   // additive ppm noise into log-space; the ordinary 1.96 factor under-covers.
@@ -191,7 +195,7 @@ export function generateAndFitCo2Decay(lambdaTrue: number, seed = ENGINE_SEED): 
     intercept,
     points: samples.map((point) => ({
       ...point,
-      fitted: 420 + Math.exp(intercept - estimate * point.t),
+      fitted: baseline + Math.exp(intercept - estimate * point.t),
       logFitted: intercept - estimate * point.t,
     })),
   };

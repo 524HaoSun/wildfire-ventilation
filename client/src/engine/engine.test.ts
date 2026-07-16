@@ -79,6 +79,19 @@ describe("CO2 tracer fit", () => {
     }
     expect(covered).toBeGreaterThanOrEqual(95);
   });
+
+  it("keeps the fitted tracer curve finite and physically positive across workbench ACH values", () => {
+    [0.1, 0.61, 1.2, 2.4, 3.4].forEach((lambdaTrue) => {
+      const fit = generateAndFitCo2Decay(lambdaTrue, 42);
+      expect(fit.estimate).toBeGreaterThan(0);
+      expect(fit.estimate).toBeLessThan(8);
+      fit.points.forEach((point) => {
+        expect(Number.isFinite(point.fitted)).toBe(true);
+        expect(point.fitted).toBeGreaterThanOrEqual(420);
+        expect(point.fitted).toBeLessThan(1900);
+      });
+    });
+  });
 });
 
 describe("rule-based ventilation guidance", () => {
