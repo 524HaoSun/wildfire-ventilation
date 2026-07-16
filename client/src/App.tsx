@@ -1,12 +1,14 @@
 /** Instrumented Architectural Modernism: application boundary and stale-cache recovery. */
 import { useEffect } from "react";
-import { Route, Switch } from "wouter";
+import { Route, Router, Switch } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/NotFound";
+
+const routerBase = import.meta.env.BASE_URL.replace(/\/$/, "");
 
 function App() {
   useEffect(() => {
@@ -22,6 +24,6 @@ function App() {
     };
     void retireLegacyOfflineCache();
   }, []);
-  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Switch><Route path="/" component={Home} /><Route component={NotFound} /></Switch><Toaster position="bottom-right" /></TooltipProvider></ThemeProvider></ErrorBoundary>;
+  return <ErrorBoundary><ThemeProvider defaultTheme="light"><TooltipProvider><Router base={routerBase}><Switch><Route path="/" component={Home} /><Route component={NotFound} /></Switch></Router><Toaster position="bottom-right" /></TooltipProvider></ThemeProvider></ErrorBoundary>;
 }
 export default App;
