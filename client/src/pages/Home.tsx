@@ -1,0 +1,504 @@
+/** Editorial research atlas: Times New Roman throughout, generous 16:9 spacing, no compressed evidence surfaces. */
+/* Editorial / Mineral Research Atlas: evidence-led hierarchy, restrained ornament, and stable 16:9 scientific layouts. */
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ArrowRight, Download, FileText, Pause, Play, RotateCcw, Settings2, X } from "lucide-react";
+import { toast } from "sonner";
+import { BUILDING_PROFILES, BuildingScene3D } from "@/components/BuildingScene3D";
+import { CaveSection } from "@/components/CaveSection";
+import { PlanSheet } from "@/components/PlanSheet";
+import { ScientificChart } from "@/components/ScientificChart";
+import caveHeroUrl from "@/assets/cave-entry-hero-cutaway_300980e2.png";
+import caveMarkUrl from "@/assets/cave-mark_84921330.png";
+import {
+  CASES,
+  DEFAULT_EXPERIMENT_STATE,
+  DEFAULT_GUIDANCE_RULES,
+  calculateExposureDose,
+  compareProtectionStrategies,
+  deriveVentilationGuidance,
+  deriveMeasuredAnchors,
+  estimateInverseParameters,
+  generateAndFitCo2Decay,
+  getCaseDataset,
+  getModelParameters,
+  peak,
+  simulateMassBalance,
+  type ExperimentState,
+  type GuidancePhase,
+  type GuidanceRules,
+  type SelectedCase,
+} from "@/engine";
+
+const STEPS = ["Challenge", "Design", "Run", "Analyse"];
+const TARGET_WINDOW_HOURS = 24;
+const EVENT_CONTEXT: Record<SelectedCase, string> = {
+  nyc2023: "Canadian wildfire smoke · New York sky turned orange",
+  london2022: "Wennington wildfire, East London · UK's first 40 °C day",
+};
+const EVENT_EXTERNAL_TEMPERATURE: Record<SelectedCase, number> = {
+  nyc2023: 29,
+  london2022: 40,
+};
+const STORAGE_KEY = "cave-experiment-state-v1";
+const INTERACTION_STORAGE_KEY = "cave-interaction-state-v1";
+const ANALYSIS_CHAPTERS = [
+  { label: "Characterise", note: "Tracer decay establishes the chamber air-change rate." },
+  { label: "Fit", note: "The shared cursor now tests the reconstructed indoor response." },
+  { label: "Dose", note: "Cumulative exposure becomes the primary evidence field." },
+  { label: "Decide", note: "Operational guidance links thresholds, phases and strategy evidence." },
+] as const;
+
+function fixedDayWindow(startIdx: number, length: number) {
+  const maxStart = Math.max(0, length - TARGET_WINDOW_HOURS);
+  const safeStart = Math.max(0, Math.min(Math.round(startIdx), maxStart));
+  return { startIdx: safeStart, endIdx: Math.min(length - 1, safeStart + TARGET_WINDOW_HOURS - 1) };
+}
+
+function Provenance({ type, children }: { type: "measured" | "model" | "cave" | "illustrative"; children: React.ReactNode }) {
+  return <span className={`provenance-chip ${type}`}>{children}</span>;
+}
+
+function Panel({ title, eyebrow, action, children, className = "" }: { title?: string; eyebrow?: string; action?: React.ReactNode; children: React.ReactNode; className?: string }) {
+  return <section className={`panel ${className}`}>{(title || eyebrow || action) && <header className="panel-header"><div>{eyebrow && <div className="eyebrow">{eyebrow}</div>}{title && <h2 className="section-title">{title}</h2>}</div>{action}</header>}{children}</section>;
+}
+
+function Segmented<T extends string | number>({ value, values, labels, onChange }: { value: T; values: readonly T[]; labels: readonly string[]; onChange: (value: T) => void }) {
+  return <div className="segmented">{values.map((item, index) => <button key={String(item)} className={value === item ? "active" : ""} onClick={() => onChange(item)}>{labels[index]}</button>)}</div>;
+}
+
+function formatTimestamp(timestamp: string) {
+  const [date, time] = timestamp.split(" ");
+  return `${date.slice(5)} ${time}`;
+}
+
+function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdvance }: { state: ExperimentState; setState: React.Dispatch<React.SetStateAction<ExperimentState>>; sharedMinute: number; setSharedMinute: React.Dispatch<React.SetStateAction<number>>; onAdvance: () => void }) {
+  const anchors = deriveMeasuredAnchors();
+  const selected = getCaseDataset(state.selectedCase);
+  const selectedPeak = peak(selected.pm25);
+  const targetWindow = fixedDayWindow(state.targetWindow.startIdx, selected.pm25.length);
+  const selectCase = (id: SelectedCase) => {
+    const next = getCaseDataset(id);
+    const nextPeak = peak(next.pm25);
+    const targetWindow = fixedDayWindow(nextPeak.index - Math.floor(TARGET_WINDOW_HOURS / 2), next.pm25.length);
+    setState((current) => ({
+      ...current,
+      selectedCase: id,
+      targetWindow,
+      extTempC: EVENT_EXTERNAL_TEMPERATURE[id],
+    }));
+    setSharedMinute(Math.max(0, Math.min((nextPeak.index - targetWindow.startIdx) * 60, (TARGET_WINDOW_HOURS * 60) - 1)));
+  };
+  const setWindowStart = (value: number) => setState((current) => ({
+    ...current,
+    targetWindow: fixedDayWindow(value, selected.pm25.length),
+  }));
+  return <main className="screen"><div className="screen-grid grid-challenge">
+    <Panel eyebrow="Select event" title="Contrasting events">
+      <div className="panel-body case-list">
+        {(["nyc2023", "london2022"] as SelectedCase[]).map((id) => {
+          const item = CASES[id];
+          const itemPeak = peak(item.pm25);
+          return <button key={id} className={`case-card case-${id} ${state.selectedCase === id ? "selected" : ""}`} onClick={() => selectCase(id)}>
+            <h3>{item.title}</h3><p>{item.subtitle}</p><p className="event-context">{EVENT_CONTEXT[id]}</p>
+            <div className="case-peak"><strong>{itemPeak.value.toFixed(1)}</strong><span>µg/m³<br />peak hourly PM₂.₅</span></div>
+            <div className="case-tags"><span className="tiny-tag">{item.site.split(" · ")[0]}</span></div>
+          </button>;
+        })}
+      </div>
+    </Panel>
+    <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
+      <Panel className={`event-explorer event-${state.selectedCase}`} eyebrow="Event explorer" title={selected.title} action={<div className="button-row"><Provenance type="measured">Measured · {selected.sourceLabel}</Provenance><button className="primary-button" onClick={onAdvance}>Design experiment <ArrowRight size={13} /></button></div>}>
+        <div className="panel-body">
+          <ScientificChart
+            series={[{ label: "PM₂.₅ measured", values: selected.pm25, color: "#b64d32", width: 2.2 }]}
+            xLabels={selected.timestamps}
+            yLabel="PM₂.₅ (µg/m³)"
+            xLabel="Local time"
+            height={220}
+            range={{ start: targetWindow.startIdx, end: targetWindow.endIdx }}
+            markerIndex={Math.min(selected.pm25.length - 1, targetWindow.startIdx + Math.floor(sharedMinute / 60))}
+            onPointSelect={(index) => {
+              const nextWindow = fixedDayWindow(index - Math.floor(TARGET_WINDOW_HOURS / 2), selected.pm25.length);
+              setState((current) => ({ ...current, targetWindow: nextWindow }));
+              setSharedMinute(Math.max(0, Math.min((index - nextWindow.startIdx) * 60, (TARGET_WINDOW_HOURS * 60) - 1)));
+            }}
+          />
+          <div className="range-controls single-window-control">
+            <label htmlFor="event-day-window">
+              <span className="window-control-heading"><b>24-hour window</b><strong>{formatTimestamp(selected.timestamps[targetWindow.startIdx])} — {formatTimestamp(selected.timestamps[targetWindow.endIdx])}</strong></span>
+              <input id="event-day-window" aria-label="Select the start of the fixed 24-hour exposure window" type="range" min={0} max={Math.max(0, selected.pm25.length - TARGET_WINDOW_HOURS)} value={targetWindow.startIdx} onChange={(event) => setWindowStart(+event.target.value)} />
+              <span className="window-control-scale"><i>First available day</i><i>Fixed duration · 24 h</i><i>Last available day</i></span>
+            </label>
+          </div>
+        </div>
+        <div className="metric-band challenge-metrics">
+          <div className="metric"><label>Peak event</label><strong className="smoke">{selectedPeak.value.toFixed(1)} µg/m³</strong></div>
+          <div className="metric"><label>Peak timestamp</label><strong>{formatTimestamp(selected.timestamps[selectedPeak.index])}</strong></div>
+        </div>
+      </Panel>
+    </div>
+  </div></main>;
+}
+
+function DesignScreen({ state, setState, simulation, selectedSensor, setSelectedSensor, onAdvance }: { state: ExperimentState; setState: React.Dispatch<React.SetStateAction<ExperimentState>>; simulation: ReturnType<typeof simulateMassBalance>; selectedSensor: string; setSelectedSensor: (sensorId: string) => void; onAdvance: () => void }) {
+  const params = simulation.params;
+  const profile = BUILDING_PROFILES[state.building];
+  const [sceneMode, setSceneMode] = useState<"section" | "3d">("section");
+  const [planOpen, setPlanOpen] = useState(false);
+  return <main className="screen"><div className="screen-grid grid-design">
+    <Panel className="design-controls" eyebrow="1 · Configure" title="Experiment controls">
+      <div className="panel-body design-control-body">
+        <div className="control-group building-control"><span className="control-label">Test building</span><div className="building-selector">{(["single_room", "two_storey", "bus"] as const).map((building) => {
+          const item = BUILDING_PROFILES[building]; const Icon = item.icon;
+          return <button key={building} className={state.building === building ? "active" : ""} onClick={() => setState((s) => ({ ...s, building }))}><Icon size={15} /><span><b>{item.shortName}</b><small>{item.volume}</small></span></button>;
+        })}</div></div>
+        <div className="control-group"><div className="slider-readout"><span>Envelope airtightness</span><strong>{state.leakageACH50.toFixed(1)} <small className="mono">h⁻¹</small></strong></div><input aria-label="Envelope airtightness" type="range" min="0.5" max="7" step="0.1" value={state.leakageACH50} onChange={(e) => setState((s) => ({ ...s, leakageACH50: +e.target.value }))} /></div>
+        <div className="control-group"><span className="control-label">Ventilation mode</span><Segmented value={state.ventMode} values={["sealed", "trickle", "mech"] as const} labels={["Sealed", "Trickle", "Mechanical"]} onChange={(ventMode) => setState((s) => ({ ...s, ventMode }))} /></div>
+        <div className="control-group"><div className="slider-readout"><span>Filter efficiency</span><strong>{Math.round(state.filterEff * 100)}%</strong></div><input aria-label="Filter efficiency" type="range" min="0" max="0.997" step="0.01" value={state.filterEff} onChange={(e) => setState((s) => ({ ...s, filterEff: +e.target.value }))} /><div className="muted mono" style={{ fontSize: 10 }}>MERV 8 · F7 · F9 · HEPA</div></div>
+        <div className="control-pair"><div className="control-group"><span className="control-label">Challenge agent</span><Segmented value={state.agent} values={["pm_surrogate", "co2_tracer", "nox_lowdose"] as const} labels={["PM₂.₅", "CO₂", "NOx"]} onChange={(agent) => setState((s) => ({ ...s, agent }))} /></div><div className="control-group temperature-control"><div className="slider-readout"><span>Exterior · −5…43 °C</span><strong>{state.extTempC.toFixed(1)}°C</strong></div><input aria-label="External temperature" type="range" min="-5" max="43" step="0.5" value={state.extTempC} onChange={(e) => setState((s) => ({ ...s, extTempC: +e.target.value }))} /><div className="slider-readout dual-temperature"><span>Interior · 10…28 °C</span><strong>{state.intTempC.toFixed(1)}°C</strong></div><input aria-label="Interior temperature" type="range" min="10" max="28" step="0.5" value={state.intTempC} onChange={(e) => setState((s) => ({ ...s, intTempC: +e.target.value }))} /></div></div>
+      </div>
+      <div className="design-generate"><div className="button-row"><button className="secondary-button" onClick={() => setPlanOpen(true)}><FileText size={13} /> Plan sheet</button><button className="primary-button" onClick={() => { toast.success(`${profile.name} plan generated`); onAdvance(); }}><FileText size={13} /> Generate experiment</button></div><span>Proceed with the same building and sensor field.</span></div>
+    </Panel>
+    <Panel className="design-scene-panel" eyebrow="2 · Orient" title="Interactive CAVE model" action={<div className="button-row"><Segmented value={sceneMode} values={["section", "3d"] as const} labels={["Section", "3D"]} onChange={setSceneMode} /><Provenance type="cave">CAVE setup</Provenance></div>}>
+      {sceneMode === "section" ? <CaveSection building={state.building} sensors={state.sensors} onSensorsChange={(sensors) => setState((current) => ({ ...current, sensors }))} selectedSensor={selectedSensor} onSensorSelect={setSelectedSensor} totalAch={params.totalAch} exteriorTempC={state.extTempC} interiorTempC={state.intTempC} ventMode={state.ventMode} /> : <BuildingScene3D building={state.building} sensors={state.sensors} totalAch={params.totalAch} selectedSensor={selectedSensor} onSensorSelect={setSelectedSensor} />}
+    </Panel>
+    <div className="design-evidence-column">
+      <Panel className="design-readiness" eyebrow="3 · Predicted response" action={<Provenance type="model">Model prediction</Provenance>}>
+        <div className="design-readiness-ledger"><div><span>Indoor peak</span><strong>{simulation.indoorPeak.toFixed(1)} <small>µg/m³</small></strong></div><div><span>Response lag</span><strong>{simulation.lagMinutes} <small>min</small></strong></div><div><span>I/O ratio</span><strong>{simulation.meanIoRatio.toFixed(2)}</strong></div><div><span>Air exchange</span><strong>{params.totalAch.toFixed(2)} <small>h⁻¹</small></strong></div></div>
+      </Panel>
+    </div>
+    <PlanSheet open={planOpen} onClose={() => setPlanOpen(false)} state={state} parameters={params} />
+  </div></main>;
+}
+
+function RunScreen({ state, setState, simulation, minute, setMinute, selectedSensor, setSelectedSensor }: { state: ExperimentState; setState: React.Dispatch<React.SetStateAction<ExperimentState>>; simulation: ReturnType<typeof simulateMassBalance>; minute: number; setMinute: React.Dispatch<React.SetStateAction<number>>; selectedSensor: string; setSelectedSensor: (sensorId: string) => void }) {
+  const [playing, setPlaying] = useState(false);
+  useEffect(() => {
+    if (!playing) return;
+    const timer = window.setInterval(() => setMinute((value) => {
+      const next = value + state.playbackSpeed;
+      if (next >= simulation.indoorMinute.length - 1) { setPlaying(false); return simulation.indoorMinute.length - 1; }
+      return next;
+    }), 300);
+    return () => window.clearInterval(timer);
+  }, [playing, simulation.indoorMinute.length, state.playbackSpeed]);
+  const currentIndoor = simulation.indoorMinute[minute] ?? simulation.indoorMinute[0];
+  const currentOutdoor = simulation.externalMinute[minute] ?? simulation.externalMinute[0];
+  const sensorValues = useMemo(() => Object.fromEntries(state.sensors.map((sensor, index) => {
+    if (sensor.kind === "PM") return [sensor.id, currentIndoor * (0.9 + index * .025)];
+    if (sensor.kind === "CO2") return [sensor.id, 842 + Math.sin(minute / 90) * 26];
+    if (sensor.kind === "NOx") return [sensor.id, Math.max(4, currentOutdoor * .34)];
+    if (sensor.kind === "T") return [sensor.id, state.intTempC + .1];
+    return [sensor.id, 46 + Math.sin(minute / 120) * 2];
+  })), [currentIndoor, currentOutdoor, minute, state.intTempC, state.sensors]);
+  const pmRanked = state.sensors.filter((sensor) => sensor.kind === "PM").sort((a, b) => (sensorValues[b.id] ?? 0) - (sensorValues[a.id] ?? 0));
+  const keySensors = [pmRanked[0], ...(["CO2", "T", "RH"] as const).map((kind) => state.sensors.find((sensor) => sensor.kind === kind))].filter(Boolean) as typeof state.sensors;
+  const hours = Math.floor(minute / 60); const mins = minute % 60;
+  return <main className="screen"><div className="screen-grid grid-run">
+    <Panel className="timeline-panel" eyebrow="Experiment replay" action={<div className="button-row"><Segmented value={state.playbackSpeed} values={[1, 5, 10] as const} labels={["×1", "×5", "×10"]} onChange={(playbackSpeed) => setState((s) => ({ ...s, playbackSpeed }))} /><button className="secondary-button replay-reset" onClick={() => { setMinute(0); setPlaying(false); }}><RotateCcw size={13} /> Reset</button></div>}>
+      <div className="timeline"><button className="transport" onClick={() => setPlaying((value) => !value)} aria-label={playing ? "Pause replay" : "Play replay"}>{playing ? <Pause size={15} /> : <Play size={15} />}</button><input aria-label="Experiment timeline" type="range" min="0" max={simulation.indoorMinute.length - 1} value={minute} onChange={(e) => setMinute(+e.target.value)} /><div className="timecode">{String(hours).padStart(2, "0")}:{String(mins).padStart(2, "0")}:00</div></div>
+    </Panel>
+    <div className="run-main" style={{ gridColumn: "1 / -1" }}>
+      <Panel className="run-scene-panel" eyebrow="Spatial check" title={BUILDING_PROFILES[state.building].shortName}><BuildingScene3D building={state.building} sensors={state.sensors} totalAch={simulation.params.totalAch} runMode externalSmokeIntensity={Math.max(0, Math.min(1, currentOutdoor / 410.1))} activeSensor={pmRanked[0]?.id} sensorValues={sensorValues} selectedSensor={selectedSensor} onSensorSelect={setSelectedSensor} /></Panel>
+      <Panel className="run-response-panel" eyebrow="Primary evidence" title="External → indoor response">
+        <div className="panel-body run-response-chart"><ScientificChart series={[{ label: "External PM₂.₅", values: simulation.externalMinute.filter((_, i) => i % 30 === 0), color: "#b64d32" }, { label: "Indoor PM₂.₅", values: simulation.indoorMinute.filter((_, i) => i % 30 === 0), color: "#0f6c62", dashed: true }]} markerIndex={Math.floor(minute / 30)} height={240} chartWidth={1200} yLabel="PM₂.₅ (µg/m³)" xLabel="Elapsed time" /></div>
+        <div className="metric-band"><div className="metric"><label>External now</label><strong className="smoke">{currentOutdoor.toFixed(1)}</strong></div><div className="metric"><label>Indoor now</label><strong className="teal">{currentIndoor.toFixed(1)}</strong></div><div className="metric"><label>Peak / lag</label><strong>{simulation.indoorPeak.toFixed(1)} / {simulation.lagMinutes} min</strong></div></div>
+      </Panel>
+      <Panel className="run-sensor-panel" eyebrow="Key sensors" title="Live"><div className="panel-body sensor-grid">{keySensors.map((sensor) => <button key={sensor.id} onClick={() => setSelectedSensor(sensor.id)} className={`sensor-tile ${sensor.id === pmRanked[0]?.id ? "hot" : ""} ${selectedSensor === sensor.id ? "selected" : ""}`}><div className="sensor-tile-head"><b>{sensor.id}</b><span>{sensor.kind}</span></div><div className="sensor-tile-value">{sensorValues[sensor.id].toFixed(sensor.kind === "PM" ? 0 : 1)} <small>{sensor.kind === "PM" || sensor.kind === "NOx" ? "µg/m³" : sensor.kind === "CO2" ? "ppm" : sensor.kind === "T" ? "°C" : "%"}</small></div></button>)}</div></Panel>
+    </div>
+  </div></main>;
+}
+
+function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setSharedMinute, selectedSensor, guidanceRules, setGuidanceRules, lockedStrategy, setLockedStrategy, decisionNote, setDecisionNote, analysisChapter, setAnalysisChapter }: {
+  state: ExperimentState;
+  simulation: ReturnType<typeof simulateMassBalance>;
+  windowValues: Array<number | null>;
+  sharedMinute: number;
+  setSharedMinute: React.Dispatch<React.SetStateAction<number>>;
+  selectedSensor: string;
+  guidanceRules: GuidanceRules;
+  setGuidanceRules: React.Dispatch<React.SetStateAction<GuidanceRules>>;
+  lockedStrategy: string | null;
+  setLockedStrategy: React.Dispatch<React.SetStateAction<string | null>>;
+  decisionNote: string;
+  setDecisionNote: React.Dispatch<React.SetStateAction<string>>;
+  analysisChapter: number;
+  setAnalysisChapter: React.Dispatch<React.SetStateAction<number>>;
+}) {
+  const [hoveredStrategy, setHoveredStrategy] = useState<string | null>(null);
+  const [activePhase, setActivePhase] = useState<GuidancePhase["id"]>("during");
+  const [expandedTradeoff, setExpandedTradeoff] = useState<"pollution" | "heat" | "fresh" | null>(null);
+  const [rulesOpen, setRulesOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+  const wheelDelta = useRef(0);
+  const wheelLocked = useRef(false);
+  const tracer = useMemo(() => generateAndFitCo2Decay(simulation.params.totalAch || .1), [simulation.params.totalAch]);
+  const inverse = useMemo(() => estimateInverseParameters(windowValues, state), [state, windowValues]);
+  const exposure = useMemo(() => calculateExposureDose(simulation.indoorMinute, "home"), [simulation.indoorMinute]);
+  const strategies = useMemo(() => compareProtectionStrategies(windowValues, state), [state, windowValues]);
+  const selectedPeak = useMemo(() => peak(windowValues), [windowValues]);
+  const guidance = useMemo(() => deriveVentilationGuidance({ selectedCase: state.selectedCase, outdoorPeak: selectedPeak.value, externalTempC: state.extTempC, eventHours: windowValues.length, strategies, rules: guidanceRules }), [guidanceRules, selectedPeak.value, state.extTempC, state.selectedCase, strategies, windowValues.length]);
+  const activeStrategyName = hoveredStrategy ?? lockedStrategy;
+  const activeStrategy = strategies.find((strategy) => strategy.name === activeStrategyName);
+  const phaseMinute: Record<GuidancePhase["id"], number> = {
+    before: Math.max(0, simulation.outdoorPeakMinute - 120),
+    during: simulation.outdoorPeakMinute,
+    after: Math.min(simulation.indoorMinute.length - 1, simulation.outdoorPeakMinute + 180),
+  };
+  const phaseRange: Record<GuidancePhase["id"], { start: number; end: number }> = {
+    before: { start: Math.max(0, simulation.outdoorPeakMinute - 240), end: Math.max(0, simulation.outdoorPeakMinute - 1) },
+    during: { start: Math.max(0, simulation.outdoorPeakMinute - 60), end: Math.min(simulation.indoorMinute.length - 1, simulation.outdoorPeakMinute + 90) },
+    after: { start: Math.min(simulation.indoorMinute.length - 1, simulation.outdoorPeakMinute + 91), end: Math.min(simulation.indoorMinute.length - 1, simulation.outdoorPeakMinute + 360) },
+  };
+  const setChapter = useCallback((chapter: number) => {
+    const next = Math.max(0, Math.min(ANALYSIS_CHAPTERS.length - 1, chapter));
+    setAnalysisChapter(next);
+    const chapterMinutes = [0, simulation.outdoorPeakMinute, simulation.indoorPeakMinute, phaseMinute[activePhase]];
+    setSharedMinute(chapterMinutes[next]);
+  }, [activePhase, phaseMinute, setAnalysisChapter, setSharedMinute, simulation.indoorPeakMinute, simulation.outdoorPeakMinute]);
+  const handleWheel = (event: React.WheelEvent<HTMLElement>) => {
+    if (rulesOpen || exportOpen) return;
+    event.preventDefault();
+    wheelDelta.current += event.deltaY;
+    if (wheelLocked.current || Math.abs(wheelDelta.current) < 44) return;
+    const direction = wheelDelta.current > 0 ? 1 : -1;
+    wheelDelta.current = 0;
+    wheelLocked.current = true;
+    setChapter(analysisChapter + direction);
+    window.setTimeout(() => { wheelLocked.current = false; }, 260);
+  };
+  const selectPhase = (phase: GuidancePhase["id"]) => {
+    setActivePhase(phase);
+    setSharedMinute(phaseMinute[phase]);
+    setAnalysisChapter(3);
+  };
+  const exportPack = () => {
+    const payload = {
+      exportedAt: new Date().toISOString(), seed: 42, state, parameters: simulation.params,
+      interaction: { sharedMinute, selectedSensor, activePhase, lockedStrategy, guidanceRules, analysisChapter: ANALYSIS_CHAPTERS[analysisChapter].label },
+      decisionNote,
+      outcomes: { indoorPeak: simulation.indoorPeak, lagMinutes: simulation.lagMinutes, meanIoRatio: simulation.meanIoRatio, totalDose: exposure.totalDose },
+      tracer: { estimate: tracer.estimate, ci95: tracer.ci95 }, inverse: { penetration: inverse.penetration, deposition: inverse.deposition },
+      strategies: strategies.map(({ curve: _curve, ...item }) => item), ventilationGuidance: guidance,
+      limitations: ["Hourly outdoor observations are interpolated for minute-level reconstruction.", "Predictions depend on selected envelope, supply and filtration assumptions.", "Guidance supports experiment interpretation and is not clinical advice."],
+    };
+    const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
+    const link = document.createElement("a"); link.href = url; link.download = "cave-analysis-pack.json"; link.click();
+    window.setTimeout(() => URL.revokeObjectURL(url), 0); setExportOpen(false); toast.success("Analysis pack and decision note exported");
+  };
+  const sampledRange = { start: Math.floor(phaseRange[activePhase].start / 30), end: Math.ceil(phaseRange[activePhase].end / 30) };
+  const sharedMarker = Math.floor(sharedMinute / 30);
+  const inverseSeries = [
+    { label: "Observed indoor", values: inverse.observed.filter((_, i) => i % 30 === 0), color: "#202827" },
+    { label: "Fitted response", values: inverse.fitted.filter((_, i) => i % 30 === 0), color: "#0f6c62", dashed: true },
+    ...(activeStrategy ? [{ label: `${activeStrategy.name} preview`, values: activeStrategy.curve.filter((_, i) => i % 30 === 0), color: "#b64d32", width: 2.3 }] : []),
+  ];
+  const tradeoffDetail = expandedTradeoff === "pollution" ? <><b>Peak comparison</b><span>{strategies[0].peak.toFixed(1)} sealed − {strategies.find((item) => item.name === guidance.recommendedStrategy)?.peak.toFixed(1)} recommended, divided by sealed peak. Source: deterministic mass-balance strategy runs.</span></> : expandedTradeoff === "heat" ? <><b>Heat rule</b><span>{state.extTempC.toFixed(1)} °C outdoor vs {guidanceRules.heatThreshold.toFixed(0)} °C threshold; limited unconditioned supply raises the conflict rating.</span></> : expandedTradeoff === "fresh" ? <><b>Fresh-air rule</b><span>{simulation.params.lambdaSup.toFixed(2)} h⁻¹ supply vs {guidanceRules.minimumFreshAirAch.toFixed(1)} h⁻¹ minimum across {windowValues.length} h.</span></> : null;
+  return <main className="screen analyse-screen" tabIndex={0} onWheel={handleWheel} onKeyDown={(event) => { if (event.key === "PageDown") { event.preventDefault(); setChapter(analysisChapter + 1); } if (event.key === "PageUp") { event.preventDefault(); setChapter(analysisChapter - 1); } }} aria-label="Analysis atlas. Scroll or use Page Up and Page Down to change evidence focus.">
+    <div className="screen-grid grid-analyse">
+      <Panel className={`analysis-panel ${analysisChapter === 0 ? "chapter-active" : "chapter-muted"}`} eyebrow="1. Air-exchange characterisation" action={<Provenance type="cave">CAVE measurement</Provenance>}>
+        <div className="analysis-content"><ScientificChart series={[{ label: "Measured tracer", values: tracer.points.map((p) => p.observed), color: "#202827" }, { label: "Exponential fit", values: tracer.points.map((p) => p.fitted), color: "#b64d32", dashed: true }]} markerIndex={Math.min(tracer.points.length - 1, Math.floor(sharedMinute / Math.max(1, simulation.indoorMinute.length / tracer.points.length)))} height={230} yLabel="CO₂ (ppm)" xLabel="Time (h)" /><div><div className="eyebrow">Air-change rate</div><div className="fit-number">{tracer.estimate.toFixed(2)}<small> h⁻¹</small></div><p className="mono muted">95% CI<br />[{Math.max(0, tracer.estimate - tracer.ci95).toFixed(2)}, {(tracer.estimate + tracer.ci95).toFixed(2)}]</p></div></div>
+      </Panel>
+      <Panel className={`analysis-panel ${analysisChapter === 1 ? "chapter-active" : "chapter-muted"}`} eyebrow="2. Parameter estimation" action={<Provenance type="model">Inverse model</Provenance>}>
+        <div className="analysis-content"><div><ScientificChart series={inverseSeries} markerIndex={sharedMarker} range={sampledRange} height={180} yLabel="PM₂.₅ (µg/m³)" xLabel="Time" /><div className="eyebrow" style={{ marginTop: 8 }}>Residuals · indoor model − measurement</div><div className="residual-strip">{inverse.residuals.filter((_, i) => i % 25 === 0).map((value, index) => <i key={index} style={{ height: `${Math.max(1, Math.min(70, Math.abs(value) * 2))}px`, background: value > 0 ? "#b64d32" : "#0f6c62" }} />)}</div></div><div><div className="eyebrow">Fitted parameters</div><table className="parameter-table"><tbody><tr><td>Penetration P</td><td><b>{inverse.penetration.toFixed(2)}</b></td></tr><tr><td>Deposition kdep</td><td><b>{inverse.deposition.toFixed(2)} h⁻¹</b></td></tr></tbody></table></div></div>
+      </Panel>
+      <Panel className={`analysis-panel dose-panel ${analysisChapter === 2 ? "chapter-active" : "chapter-muted"}`} eyebrow="3. Occupant exposure dose" action={<Provenance type="model">Dose calculation</Provenance>}>
+        <div className="analysis-content"><ScientificChart series={[{ label: "Indoor cumulative dose", values: exposure.cumulative.filter((_, i) => i % 30 === 0), color: "#b64d32" }, { label: "WHO guideline-day", values: exposure.cumulative.filter((_, i) => i % 30 === 0).map((_, i) => i * .5 * 15), color: "#0f6c62", dashed: true }]} markerIndex={sharedMarker} range={sampledRange} height={235} yLabel="Dose (µg·h/m³)" xLabel="Exposure time" /><div><div className="eyebrow">Total dose</div><div className="fit-number">{Math.round(exposure.totalDose).toLocaleString()}<small> µg·h/m³</small></div><div className="hero-number dose-equivalent">{exposure.equivalentWhoDays.toFixed(2)}<small> WHO guideline-days</small></div></div></div>
+      </Panel>
+      <Panel className={`analysis-panel guidance-panel ${analysisChapter === 3 ? "chapter-active" : "chapter-muted"}`} eyebrow="4. Ventilation guidance" action={<div className="button-row"><button className="secondary-button" onClick={() => setRulesOpen(true)}><Settings2 size={13} /> What changes this?</button><button className="primary-button" onClick={() => setExportOpen(true)}><Download size={13} /> Export</button></div>}>
+        <div className="guidance-layout">
+          <section className="guidance-decision" aria-labelledby="guidance-headline">
+            <div className="guidance-recommendation"><div className="guidance-recommendation-label"><span>Recommended strategy</span><strong>{guidance.recommendedStrategy}</strong></div><h3 id="guidance-headline">{guidance.headline}</h3><p>{guidance.explanation}</p></div>
+            <div className="guidance-phases" aria-label="Operational sequence">{guidance.phases.map((phase, index) => {
+              const trigger = phase.id === "before" ? `Outdoor PM₂.₅ remains below ${guidanceRules.smokeThreshold.toFixed(0)} µg/m³` : phase.id === "during" ? "The modelled outdoor pollution peak is active" : "Outdoor PM₂.₅ is falling after the peak";
+              return <button type="button" key={phase.id} className={activePhase === phase.id ? "active" : ""} aria-pressed={activePhase === phase.id} onClick={() => selectPhase(phase.id)}><header><span className="phase-number">0{index + 1}</span><div><small>Phase</small><h4>{phase.label}</h4></div></header><p>{phase.action}</p><span className="phase-trigger"><span>Activate when</span><b>{trigger}</b></span></button>;
+            })}</div>
+            <div className="guidance-tradeoffs"><div className="guidance-subhead"><span>Trade-off summary</span><small>Select a metric to inspect its derivation</small></div><div className="tradeoff-grid">
+              <button type="button" aria-expanded={expandedTradeoff === "pollution"} onClick={() => setExpandedTradeoff((value) => value === "pollution" ? null : "pollution")}><span>Pollution reduction</span><strong>↓ {guidance.tradeoffs.pollutionReduction}%</strong><small>Peak relative to sealed baseline</small></button>
+              <button type="button" aria-expanded={expandedTradeoff === "heat"} onClick={() => setExpandedTradeoff((value) => value === "heat" ? null : "heat")}><span>Overheating risk</span><strong className={`risk-${guidance.tradeoffs.overheatingRisk}`}>{guidance.tradeoffs.overheatingRisk}</strong><small>{state.extTempC.toFixed(1)} °C external temperature</small></button>
+              <button type="button" aria-expanded={expandedTradeoff === "fresh"} onClick={() => setExpandedTradeoff((value) => value === "fresh" ? null : "fresh")}><span>Fresh-air adequacy</span><strong className={`risk-${guidance.tradeoffs.freshAirAdequacy}`}>{guidance.tradeoffs.freshAirAdequacy}</strong><small>{simulation.params.lambdaSup.toFixed(1)} h⁻¹ current supply</small></button>
+            </div>{tradeoffDetail && <div className="tradeoff-detail" aria-live="polite">{tradeoffDetail}</div>}</div>
+          </section>
+          <aside className="guidance-evidence" aria-label="Strategy comparison evidence"><div className="guidance-evidence-heading"><div><span>Strategy comparison</span><h4>{activeStrategy ? `${activeStrategy.name} curve preview` : "Modelled indoor PM₂.₅ peak"}</h4></div><small>{lockedStrategy ? "Comparison locked" : "Hover to preview · click to lock"}</small></div><div className="guidance-inputs"><div><span>Selected event</span><b>{CASES[state.selectedCase].title}</b></div><div><span>Shared context</span><b>{selectedSensor} · {Math.floor(sharedMinute / 60)}h {sharedMinute % 60}m</b></div></div><div className="strategy-bars">{strategies.map((strategy) => {
+            const isRecommended = strategy.name === guidance.recommendedStrategy; const isLocked = lockedStrategy === strategy.name; const isPreviewed = activeStrategyName === strategy.name; const barWidth = Math.max(1, Math.min(100, strategy.peak / Math.max(1, strategies[0].peak) * 100));
+            return <button type="button" className={`strategy-row ${isRecommended ? "recommended" : ""} ${isPreviewed ? "previewed" : ""}`} key={strategy.name} aria-pressed={isLocked} onMouseEnter={() => setHoveredStrategy(strategy.name)} onMouseLeave={() => setHoveredStrategy(null)} onFocus={() => setHoveredStrategy(strategy.name)} onBlur={() => setHoveredStrategy(null)} onClick={() => { setLockedStrategy((value) => value === strategy.name ? null : strategy.name); setAnalysisChapter(1); }}><span className="strategy-name"><b>{strategy.name}</b><small>{isLocked ? "Locked comparison" : isRecommended ? "Recommended" : "Preview curve"}</small></span><span className="strategy-track" role="img" aria-label={`${strategy.name}: ${strategy.peak.toFixed(1)} micrograms per cubic metre`}><span className="strategy-fill" style={{ width: `${barWidth}%` }} /></span><span className="strategy-value"><strong>{strategy.peak.toFixed(1)}</strong><small>↓ {Math.max(0, strategy.peakReduction).toFixed(0)}%</small></span></button>;
+          })}</div><p className="guidance-evidence-note">The selected phase controls chart shading and the shared cursor. A locked strategy adds its predicted curve to Parameter estimation.</p></aside>
+        </div>
+      </Panel>
+    </div>
+    <div className="analysis-scroll-announcer" aria-live="polite"><b>{String(analysisChapter + 1).padStart(2, "0")} · {ANALYSIS_CHAPTERS[analysisChapter].label}</b><span>{ANALYSIS_CHAPTERS[analysisChapter].note}</span><small>Scroll / Page Up / Page Down changes evidence focus</small></div>
+    {rulesOpen && <div className="workbench-sheet-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setRulesOpen(false); }}><section className="workbench-sheet rules-sheet" role="dialog" aria-modal="true" aria-labelledby="rules-title"><header><div><span>Rule sensitivity</span><h2 id="rules-title">What changes this recommendation?</h2></div><button className="icon-button" onClick={() => setRulesOpen(false)} aria-label="Close rule sensitivity"><X size={17} /></button></header><p>Adjust bounded research assumptions. Guidance, phases and trade-offs update immediately.</p><div className="rule-controls">
+      <label><span>Acute smoke threshold <b>{guidanceRules.smokeThreshold.toFixed(0)} µg/m³</b></span><input type="range" min="50" max="200" step="5" value={guidanceRules.smokeThreshold} onChange={(event) => setGuidanceRules((rules) => ({ ...rules, smokeThreshold: +event.target.value }))} /><small>Outdoor peak: {selectedPeak.value.toFixed(1)} µg/m³</small></label>
+      <label><span>Heat-conflict threshold <b>{guidanceRules.heatThreshold.toFixed(0)} °C</b></span><input type="range" min="24" max="38" step="1" value={guidanceRules.heatThreshold} onChange={(event) => setGuidanceRules((rules) => ({ ...rules, heatThreshold: +event.target.value }))} /><small>Exterior input: {state.extTempC.toFixed(1)} °C</small></label>
+      <label><span>Minimum fresh-air target <b>{guidanceRules.minimumFreshAirAch.toFixed(1)} h⁻¹</b></span><input type="range" min="0.3" max="1.2" step="0.1" value={guidanceRules.minimumFreshAirAch} onChange={(event) => setGuidanceRules((rules) => ({ ...rules, minimumFreshAirAch: +event.target.value }))} /><small>Modelled supply: {simulation.params.lambdaSup.toFixed(2)} h⁻¹</small></label>
+    </div><div className="rule-result"><b>{guidance.recommendedStrategy}</b><span>{guidance.headline}</span>{guidance.ruleTrace.map((line) => <small key={line}>{line}</small>)}</div><footer><button className="secondary-button" onClick={() => setGuidanceRules(DEFAULT_GUIDANCE_RULES)}><RotateCcw size={13} /> Reset documented defaults</button><button className="primary-button" onClick={() => setRulesOpen(false)}>Apply to analysis</button></footer></section></div>}
+    {exportOpen && <div className="workbench-sheet-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setExportOpen(false); }}><section className="workbench-sheet export-sheet" role="dialog" aria-modal="true" aria-labelledby="export-title"><header><div><span>Research annotation</span><h2 id="export-title">Decision note</h2></div><button className="icon-button" onClick={() => setExportOpen(false)} aria-label="Close export"><X size={17} /></button></header><p>The note is saved locally and exported with the current event, strategy, evidence, rules and limitations.</p><textarea aria-label="Decision note" maxLength={1200} value={decisionNote} onChange={(event) => setDecisionNote(event.target.value)} placeholder="Record the operational decision, assumptions that matter, unresolved uncertainty and the next measurement required…" /><div className="export-summary"><span><b>Event</b>{CASES[state.selectedCase].title}</span><span><b>Strategy</b>{lockedStrategy ?? guidance.recommendedStrategy}</span><span><b>Context</b>{selectedSensor} · {Math.floor(sharedMinute / 60)}h {sharedMinute % 60}m</span></div><footer><span>{decisionNote.length} / 1200 characters</span><button className="primary-button" onClick={exportPack}><Download size={13} /> Download analysis pack</button></footer></section></div>}
+  </main>;
+}
+
+function BootHeroVisual() {
+  const sensorPoints = [[19, 61, 0], [34, 37, 1.2], [50, 69, 2.1], [67, 42, .7], [82, 60, 1.7]];
+  return <figure className="boot-hero" aria-label="CAVE controlled-environment chamber with an instrumented test building and visualised airflow">
+    <div className="boot-hero-media"><img src={caveHeroUrl} alt="A cutaway research building nested inside the CAVE controlled-environment chamber" /></div>
+    <div className="boot-hero-grid" aria-hidden="true" />
+    <svg className="boot-hero-section-lines" viewBox="0 0 1000 600" aria-hidden="true">
+      <path className="section-envelope" d="M74 486V104l42-42h790l38 42v382H74Z" />
+      <path className="section-building" d="M307 475V245l183-96 215 111v215M307 245h398M490 149v326" />
+      <path className="section-registration" d="M45 500h930M74 520h870M74 512v16M944 512v16M52 104v382M44 104h16M44 486h16" />
+    </svg>
+    <svg className="boot-hero-airflow" viewBox="0 0 1000 600" aria-hidden="true">
+      <path d="M42 390C190 298 268 288 410 342S676 438 958 270" />
+      <path d="M58 454C246 352 369 380 504 414S746 438 932 344" />
+      <path d="M166 248C306 174 425 205 548 256S745 314 886 216" />
+    </svg>
+    <div className="boot-hero-sensors" aria-hidden="true">{sensorPoints.map(([x, y, delay], index) => <i key={index} style={{ "--sensor-x": `${x}%`, "--sensor-y": `${y}%`, "--sensor-delay": `${delay}s` } as React.CSSProperties} />)}</div>
+    <div className="boot-hero-scan" aria-hidden="true" />
+    <div className="boot-hero-dimension boot-hero-dimension-x" aria-hidden="true"><i /><span>206 m² controlled environment</span><i /></div>
+    <div className="boot-hero-dimension boot-hero-dimension-y" aria-hidden="true"><i /><span>9 m clear height</span><i /></div>
+    <div className="boot-hero-registration" aria-hidden="true"><i /><i /><i /><i /></div>
+    <figcaption className="boot-hero-caption"><span>Architectural section / measured boundary</span><b>01</b></figcaption>
+    <div className="boot-hero-status" aria-hidden="true"><i /> Measured airflow / model overlay</div>
+  </figure>;
+}
+
+function EnteringPage({ onEnter }: { onEnter: () => void }) {
+  const [skipped, setSkipped] = useState(false);
+  const enteringRef = useRef(false);
+  const onEnterRef = useRef(onEnter);
+  onEnterRef.current = onEnter;
+  const beginEnter = useCallback(() => {
+    if (enteringRef.current) return;
+    enteringRef.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.set("screen", "1");
+    window.history.replaceState(null, "", url);
+    onEnterRef.current();
+  }, []);
+  useEffect(() => {
+    const handleEnter = (event: KeyboardEvent) => { if (event.key === "Enter") beginEnter(); };
+    window.addEventListener("keydown", handleEnter);
+    return () => window.removeEventListener("keydown", handleEnter);
+  }, [beginEnter]);
+  return <main className={`entry-page boot-page ${skipped ? "boot-skipped" : ""}`}>
+    <div className="boot-smoke-field" aria-hidden="true"><i /><i /><i /></div>
+    <button className="boot-skip" onClick={() => setSkipped(true)}>Reveal complete plate</button>
+    <header className="entry-header">
+      <div className="entry-brand"><img src={caveMarkUrl} alt="Wildfire Ventilation mark" /><span>Wildfire</span><i>/</i><small>Ventilation</small></div>
+      <div className="entry-meta"><span>Wildfire indoor safety</span><span>Demonstration protocol · 2026</span></div>
+    </header>
+    <div className="boot-layout" aria-label="CAVE Experiment Workbench instrument boot sequence">
+      <section className="entry-copy">
+        <div className="entry-kicker"><span>01</span> Evidence-led indoor exposure research</div>
+        <div className="boot-wordmark">Wildfire <span>Ventilation</span></div>
+        <h1>Reproduce Wildfire Smoke.<br />Test Indoor Response.</h1>
+        <p className="entry-thesis">Measured boundary conditions become experiments, evidence and ventilation decisions.</p>
+        <a
+          className="entry-button"
+          href="?screen=1"
+          onClick={(event) => {
+            event.preventDefault();
+            beginEnter();
+          }}
+        ><span>Begin Challenge protocol</span><ArrowRight size={18} /></a>
+        <div className="entry-hint">Press Enter · Select a measured exposure event</div>
+      </section>
+      <section className="boot-instrument">
+        <div className="boot-section"><BootHeroVisual /></div>
+        <div className="boot-readout" aria-live="polite">
+          <p style={{ "--boot-order": 0 } as React.CSSProperties}>Boundary-condition provenance</p>
+          <p style={{ "--boot-order": 1 } as React.CSSProperties}>NEW YORK · 07 JUN 2023 · PM₂.₅ peak 410.1 µg/m³ <b>MEASURED</b></p>
+          <p style={{ "--boot-order": 2 } as React.CSSProperties}>LONDON · 19 JUL 2022 · 40.3 °C · O₃ 142 µg/m³ <b>MEASURED</b></p>
+          <div className="boot-progress"><i /></div><span>2 measured events · 4-stage experiment protocol</span>
+        </div>
+      </section>
+    </div>
+    <footer className="entry-footer"><span>Measure</span><i /><span>Reconstruct</span><i /><span>Replay</span><i /><span>Analyse</span><b>01—04</b></footer>
+  </main>;
+}
+
+export default function Home() {
+  const [entered, setEntered] = useState(() => new URLSearchParams(window.location.search).has("screen"));
+  const [screen, setScreen] = useState(() => {
+    const requested = Number(new URLSearchParams(window.location.search).get("screen"));
+    return requested >= 1 && requested <= 4 ? requested : 1;
+  });
+  const [state, setState] = useState<ExperimentState>(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? "{}") as Partial<ExperimentState>;
+      const storedAgent = (stored as { agent?: string }).agent;
+      const storedSensors = Array.isArray(stored.sensors) ? stored.sensors : [];
+      const sensors = DEFAULT_EXPERIMENT_STATE.sensors.map((sensor, index) => ({
+        ...sensor,
+        x: storedSensors[index]?.x ?? sensor.x,
+        y: storedSensors[index]?.y ?? sensor.y,
+      }));
+      const selectedCase: SelectedCase = stored.selectedCase === "london2022" ? "london2022" : "nyc2023";
+      const merged = { ...DEFAULT_EXPERIMENT_STATE, ...stored, selectedCase, agent: storedAgent === "co_lowdose" ? "nox_lowdose" : stored.agent ?? DEFAULT_EXPERIMENT_STATE.agent, sensors } as ExperimentState;
+      const storedDataset = getCaseDataset(merged.selectedCase);
+      const storedHours = merged.targetWindow.endIdx - merged.targetWindow.startIdx + 1;
+      const preferredStart = storedHours === TARGET_WINDOW_HOURS ? merged.targetWindow.startIdx : peak(storedDataset.pm25).index - Math.floor(TARGET_WINDOW_HOURS / 2);
+      return { ...merged, targetWindow: fixedDayWindow(preferredStart, storedDataset.pm25.length) };
+    } catch { return DEFAULT_EXPERIMENT_STATE; }
+  });
+  const [sharedMinute, setSharedMinute] = useState(() => {
+    try { return Number(JSON.parse(localStorage.getItem(INTERACTION_STORAGE_KEY) ?? "{}").sharedMinute) || 0; }
+    catch { return 0; }
+  });
+  const [selectedSensor, setSelectedSensor] = useState(() => {
+    try { return String(JSON.parse(localStorage.getItem(INTERACTION_STORAGE_KEY) ?? "{}").selectedSensor || DEFAULT_EXPERIMENT_STATE.sensors[0].id); }
+    catch { return DEFAULT_EXPERIMENT_STATE.sensors[0].id; }
+  });
+  const [guidanceRules, setGuidanceRules] = useState<GuidanceRules>(() => {
+    try { return { ...DEFAULT_GUIDANCE_RULES, ...JSON.parse(localStorage.getItem(INTERACTION_STORAGE_KEY) ?? "{}").guidanceRules }; }
+    catch { return DEFAULT_GUIDANCE_RULES; }
+  });
+  const [lockedStrategy, setLockedStrategy] = useState<string | null>(() => {
+    try { return JSON.parse(localStorage.getItem(INTERACTION_STORAGE_KEY) ?? "{}").lockedStrategy ?? null; }
+    catch { return null; }
+  });
+  const [decisionNote, setDecisionNote] = useState(() => {
+    try { return String(JSON.parse(localStorage.getItem(INTERACTION_STORAGE_KEY) ?? "{}").decisionNote || ""); }
+    catch { return ""; }
+  });
+  const [analysisChapter, setAnalysisChapter] = useState(0);
+  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }, [state]);
+  useEffect(() => {
+    localStorage.setItem(INTERACTION_STORAGE_KEY, JSON.stringify({ sharedMinute, selectedSensor, guidanceRules, lockedStrategy, decisionNote }));
+  }, [decisionNote, guidanceRules, lockedStrategy, selectedSensor, sharedMinute]);
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (entered) url.searchParams.set("screen", String(screen));
+    else url.searchParams.delete("screen");
+    window.history.replaceState(null, "", url);
+  }, [entered, screen]);
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
+      if (entered && event.key === "Escape") setEntered(false);
+      if (/^[1-4]$/.test(event.key)) { setEntered(true); setScreen(+event.key); }
+      if (entered && event.key === "ArrowRight") setScreen((value) => Math.min(4, value + 1));
+      if (entered && event.key === "ArrowLeft") setScreen((value) => Math.max(1, value - 1));
+    };
+    window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
+  }, [entered]);
+  const dataset = getCaseDataset(state.selectedCase);
+  const windowValues = useMemo(() => dataset.pm25.slice(state.targetWindow.startIdx, state.targetWindow.endIdx + 1), [dataset, state.targetWindow]);
+  const simulation = useMemo(() => simulateMassBalance(windowValues, state), [state, windowValues]);
+  useEffect(() => { setSharedMinute((value) => Math.max(0, Math.min(value, simulation.indoorMinute.length - 1))); }, [simulation.indoorMinute.length]);
+  const advance = useCallback(() => setScreen((value) => Math.min(4, value + 1)), []);
+  const sharedTimestampIndex = Math.min(state.targetWindow.endIdx, state.targetWindow.startIdx + Math.floor(sharedMinute / 60));
+  return <div className="experience-shell"><div className="experience-stage">
+    {!entered ? <EnteringPage onEnter={() => setEntered(true)} /> : <div className="workbench">
+    <header className="topbar">
+      <button className="brand brand-button" onClick={() => setEntered(false)} aria-label="Return to entering page"><img className="brand-mark" src={caveMarkUrl} alt="Wildfire Ventilation mark" /><div><div className="brand-wordmark">Wildfire <span>Ventilation</span></div><div className="brand-subtitle">Indoor Safety & Environmental Resilience</div></div></button>
+      <nav className="lifecycle" aria-label="Experiment lifecycle">{STEPS.map((label, index) => <div key={label} className={`life-step ${screen === index + 1 ? "active" : ""} ${screen > index + 1 ? "done" : ""}`}><button className="life-button" onClick={() => setScreen(index + 1)}><span className="life-index">{screen > index + 1 ? "✓" : String(index + 1).padStart(2, "0")}</span>{label}</button></div>)}</nav>
+      <div className="atlas-edition"><span>Research atlas</span><strong>Edition 01 · 2026</strong></div>
+    </header>
+    <div className="status-strip"><span><i>Case</i>{dataset.title}</span><span><i>Shared context</i>{formatTimestamp(dataset.timestamps[sharedTimestampIndex])} · {selectedSensor}</span><span><i>Modelled air change</i>{simulation.params.totalAch.toFixed(2)} h⁻¹</span>{screen === 4 && <span className="analysis-status"><i>{ANALYSIS_CHAPTERS[analysisChapter].label}</i><b>{ANALYSIS_CHAPTERS[analysisChapter].note}</b></span>}{simulation.gapFilled && <span className="gap-note">Interpolated evidence gap</span>}</div>
+    {screen === 1 && <ChallengeScreen state={state} setState={setState} sharedMinute={sharedMinute} setSharedMinute={setSharedMinute} onAdvance={advance} />}
+    {screen === 2 && <DesignScreen state={state} setState={setState} simulation={simulation} selectedSensor={selectedSensor} setSelectedSensor={setSelectedSensor} onAdvance={advance} />}
+    {screen === 3 && <RunScreen state={state} setState={setState} simulation={simulation} minute={sharedMinute} setMinute={setSharedMinute} selectedSensor={selectedSensor} setSelectedSensor={setSelectedSensor} />}
+    {screen === 4 && <AnalyseScreen state={state} simulation={simulation} windowValues={windowValues} sharedMinute={sharedMinute} setSharedMinute={setSharedMinute} selectedSensor={selectedSensor} guidanceRules={guidanceRules} setGuidanceRules={setGuidanceRules} lockedStrategy={lockedStrategy} setLockedStrategy={setLockedStrategy} decisionNote={decisionNote} setDecisionNote={setDecisionNote} analysisChapter={analysisChapter} setAnalysisChapter={setAnalysisChapter} />}
+  </div>}
+  </div></div>;
+}

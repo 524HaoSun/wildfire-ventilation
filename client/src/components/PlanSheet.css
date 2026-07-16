@@ -1,0 +1,28 @@
+/* Editorial research atlas: right-edge technical folio, Times New Roman throughout, compact facts without crowding. */
+.plan-sheet-layer{position:fixed;inset:0;z-index:70;display:flex;justify-content:flex-end}
+.plan-sheet-scrim{position:absolute;inset:0;border:0;background:rgba(16,24,23,.32);backdrop-filter:blur(2px)}
+.plan-sheet{position:relative;width:min(590px,94vw);height:100%;overflow:auto;background:#f5f3eb;border-left:1px solid #5f6e6a;box-shadow:-24px 0 60px rgba(23,30,29,.17);padding:28px;animation:sheet-enter 220ms var(--ease-out)}
+.plan-sheet>header{display:flex;justify-content:space-between;align-items:flex-start;padding-bottom:18px;border-bottom:2px solid var(--ink)}
+.plan-sheet>header span,.sheet-section>span,.facility-block span{font:700 11px "Times New Roman",Times,serif;letter-spacing:.06em;color:var(--teal)}
+.plan-sheet h2{margin:4px 0 0;font:700 24px "Times New Roman",Times,serif}
+.plan-sheet>header button{width:30px;height:30px;display:grid;place-items:center;border:1px solid var(--line);background:transparent}
+.facility-block{display:grid;grid-template-columns:112px 1fr;gap:18px;padding:24px 0;border-bottom:1px solid var(--line)}
+.sheet-stamp{height:112px;display:grid;place-content:center;text-align:center;background:var(--ink);color:#fff;font:700 32px "Times New Roman",Times,serif;line-height:.78}
+.sheet-stamp small{font:700 8px "Times New Roman",Times,serif;letter-spacing:.1em;color:#a8cac3}
+.facility-block h3{font:700 21px/1.15 "Times New Roman",Times,serif;margin:8px 0}
+.facility-block p,.plan-sheet footer p{font-size:13px;line-height:1.55;color:var(--muted)}
+.sheet-facts{display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--line)}
+.sheet-facts article{padding:14px 10px;border-right:1px solid var(--line)}
+.sheet-facts article:last-child{border:0}
+.sheet-facts span,.sheet-facts small{display:block;font:700 10.5px "Times New Roman",Times,serif;color:var(--muted)}
+.sheet-facts b{display:block;margin:5px 0;font:700 17px "Times New Roman",Times,serif}
+.sheet-section{padding:18px 0;border-bottom:1px solid var(--line)}
+.sheet-section h3{font-size:18px;margin:5px 0 9px}
+.sheet-section table{width:100%;border-collapse:collapse;font:600 12px "Times New Roman",Times,serif}
+.sheet-section td{padding:9px 0;border-top:1px solid #d4d5ce;vertical-align:top}.sheet-section td:first-child{padding-right:18px}.sheet-section td:last-child{text-align:right;color:var(--teal);overflow-wrap:anywhere}
+.sensor-register{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));margin-top:10px;border:1px solid var(--line)}
+.sensor-register b{min-width:0;padding:11px;border-right:1px solid var(--line);border-bottom:1px solid var(--line);font:700 12px "Times New Roman",Times,serif}
+.sensor-register small{display:block;margin-top:4px;color:var(--muted);font-size:10.5px;overflow-wrap:anywhere}
+.plan-sheet footer{display:grid;gap:12px;padding-top:18px}.plan-sheet footer p{margin:0}
+@keyframes sheet-enter{from{transform:translateX(32px);opacity:.4}to{transform:none;opacity:1}}
+@media(prefers-reduced-motion:reduce){.plan-sheet{animation:none}}
