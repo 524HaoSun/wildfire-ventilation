@@ -56,10 +56,32 @@ export function CaveSection({ sensors, onSensorsChange, selectedSensor, onSensor
           <filter id="soft-glow"><feGaussianBlur stdDeviation="6" /></filter>
         </defs>
         <rect x="92" y="82" width="726" height="355" fill="url(#external-smoke)" stroke="#171b1b" strokeWidth="2" />
+        <g className="cave-hall-panels" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5].map((index) => <rect key={index} x={116 + index * 116} y="102" width="92" height="310" />)}
+          <path d="M92 180H818M92 268H818M92 356H818" />
+        </g>
         <path d="M92 82H818M104 67H806M128 58V82M198 58V82M268 58V82M338 58V82M408 58V82M478 58V82M548 58V82M618 58V82M688 58V82M758 58V82" stroke="#171b1b" strokeWidth="1.25" fill="none" />
-        <text x="455" y="49" textAnchor="middle" className="cave-small-label">INJECTION MANIFOLD</text>
+        <g className="cave-ceiling-services" aria-hidden="true">
+          <rect x="178" y="64" width="558" height="26" rx="4" />
+          {[220, 292, 364, 436, 508, 580, 652, 724].map((x) => <g key={x}><path d={`M${x} 90v45`} /><path d={`M${x - 13} 126h26`} /></g>)}
+        </g>
+        <text x="455" y="49" textAnchor="middle" className="cave-small-label">SUPPLY / SMOKE INJECTION MANIFOLD</text>
         <text x="455" y="108" textAnchor="middle" className="cave-zone-label">EXTERNAL CAVE HALL · 206 m²</text>
         <text x="455" y="126" textAnchor="middle" className="cave-note">ONE 9 m-HIGH VOLUME · CONTROLLED OUTDOOR ENVIRONMENT · {exteriorTempC.toFixed(1)} °C</text>
+        <g className="cave-return-wall" transform="translate(774 168)" aria-hidden="true">
+          <rect width="32" height="184" />
+          {[18, 48, 78, 108, 138, 168].map((y) => <path key={y} d={`M7 ${y}h18`} />)}
+          <text x="16" y="205" textAnchor="middle" className="cave-note">RETURN</text>
+        </g>
+        <g className="cave-plant-room" transform="translate(110 318)" aria-hidden="true">
+          <rect width="64" height="78" />
+          <path d="M12 18h40M12 35h40M12 52h40" />
+          <text x="32" y="96" textAnchor="middle" className="cave-note">EXTERIOR HVAC</text>
+        </g>
+        <g className="cave-floor-rails" aria-hidden="true">
+          <path d="M122 430H786M122 445H786" />
+          {[170, 254, 338, 422, 506, 590, 674, 758].map((x) => <path key={x} d={`M${x} 427v22`} />)}
+        </g>
         <g opacity=".72">
           {Array.from({ length: 10 }, (_, index) => <path key={index} d={`M${145 + index * 63} 64v16l-5-7m5 7l5-7`} stroke="#171b1b" fill="none" strokeWidth="1" />)}
         </g>
@@ -160,6 +182,7 @@ export function CaveSection({ sensors, onSensorsChange, selectedSensor, onSensor
         })}
       </svg>
       <div className="cave-legend"><span><i className="sensor-dot" />S1–S3 PM₂.₅</span><span>S4 NOx · S5–S6 CO₂</span><span>S7 temperature · S8 RH</span><span><i className="airflow-line" />Independent hall / interior airflow</span></div>
+      <div className="cave-model-caveat">Single-zone model · one indoor mean · inter-sensor spatial variation is illustrative, not resolved.</div>
     </div>
   );
 }

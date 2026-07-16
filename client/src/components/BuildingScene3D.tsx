@@ -75,9 +75,9 @@ const CAMERA_POSITIONS: Record<CameraView, [number, number, number]> = {
 };
 
 function isoCameraPosition(building: Building, runMode: boolean): [number, number, number] {
-  if (building === "two_storey") return runMode ? [8.1, 6.4, 9] : [9.35, 7.2, 10.4];
-  if (building === "bus") return runMode ? [7.6, 3.35, 7.5] : [8.9, 3.95, 8.9];
-  return runMode ? [5.65, 3.75, 6.35] : [7.2, 4.75, 8.05];
+  if (building === "two_storey") return runMode ? [11.2, 8.4, 12.2] : [9.35, 7.2, 10.4];
+  if (building === "bus") return runMode ? [11.4, 5.4, 10.6] : [8.9, 3.95, 8.9];
+  return runMode ? [10.2, 6.6, 11.2] : [7.2, 4.75, 8.05];
 }
 
 function addEdges(mesh: THREE.Mesh, group: THREE.Object3D, color = 0x31413f, opacity = .7) {
@@ -349,7 +349,7 @@ export function BuildingScene3D({
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0xe8ece8, 24, 46);
-    const camera = new THREE.PerspectiveCamera(runMode ? 31 : 34, 1, .1, 100);
+    const camera = new THREE.PerspectiveCamera(runMode ? 36 : 34, 1, .1, 100);
     const initialCameraPosition = isoCameraPosition(building, runMode);
     camera.position.set(...initialCameraPosition);
     cameraRef.current = camera;
@@ -357,7 +357,7 @@ export function BuildingScene3D({
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.dampingFactor = .075;
-    controls.minDistance = building === "single_room" ? (runMode ? 4.25 : 5.2) : (runMode ? 6.2 : 7);
+    controls.minDistance = building === "single_room" ? (runMode ? 7.4 : 5.2) : (runMode ? 8.4 : 7);
     controls.maxDistance = 28;
     controls.maxPolarAngle = Math.PI * .495;
     controls.target.set(0, building === "two_storey" ? 2.7 : 1.35, 0);
@@ -385,6 +385,20 @@ export function BuildingScene3D({
     hallFloor.position.y = -.1;
     hallFloor.receiveShadow = true;
     scene.add(hallFloor);
+    createPanel(scene, [17.1, 8.4, .08], [0, 4.1, -5.48], 0xf2f6f2, .2);
+    createPanel(scene, [.08, 8.4, 11], [-8.55, 4.1, 0], 0xf2f6f2, .16);
+    createPanel(scene, [.08, 8.4, 11], [8.55, 4.1, 0], 0xf2f6f2, .16);
+    createPanel(scene, [17.1, .08, 11], [0, 8.36, 0], 0xf2f6f2, .14);
+    [-6.8, -3.4, 0, 3.4, 6.8].forEach((x) => createSolid(scene, [.035, 8.1, .05], [x, 4.05, -5.42], 0xb5beb9, .56, .22));
+    [-3.6, -1.8, 0, 1.8, 3.6].forEach((z) => createSolid(scene, [16.6, .045, .035], [0, 8.27, z], 0xb5beb9, .5, .28));
+    [-4.4, -2.2, 0, 2.2, 4.4].forEach((x) => {
+      createSolid(scene, [.72, .055, .42], [x, 7.62, -3.85], 0x6b7773, .46, .55);
+      createSolid(scene, [.34, .035, .34], [x, 7.2, -3.85], 0x8f9a96, .42, .5);
+    });
+    const returnWall = createSolid(scene, [.08, 4.4, 2.45], [8.36, 2.2, -3.5], 0x6c7874, .46, .6);
+    returnWall.userData.kind = "return-wall";
+    for (let y = .45; y <= 4.05; y += .38) createSolid(scene, [.09, .035, 2.08], [8.3, y, -3.5], 0xc2ccc7, .34, .62);
+    [-6, -3, 0, 3, 6].forEach((x) => createSolid(scene, [1.7, .035, .07], [x, -.015, 4.15], 0x5d6864, .48, .55));
     const hallFrame = new THREE.Group();
     hallFrame.name = "cave-hall-structure";
     const steel = 0x59635f;
@@ -592,20 +606,22 @@ export function BuildingScene3D({
 
   return <section className="building-scene" data-building={building} data-run-mode={runMode ? "true" : "false"} data-testid={`building-scene-${building}`}>
     <div className="scene-toolbar">
-      <div className="scene-identity"><SelectedIcon size={15} /><div><b>{profile.name}</b><span>{runMode ? "Spatial check" : "Interactive CAVE model"}</span></div></div>
+      <div className="scene-identity"><SelectedIcon size={15} /><div><b>{profile.name}</b><span>{runMode ? "Model reconstruction" : "Interactive CAVE model"}</span></div></div>
       <div className="view-switch" aria-label="Camera view">
         {(["iso", "front", "top"] as CameraView[]).map((item) => <button key={item} className={view === item ? "active" : ""} onClick={() => moveCamera(item)}>{item}</button>)}
         <button onClick={() => moveCamera("iso")} aria-label="Reset camera"><LocateFixed size={13} /></button>
       </div>
     </div>
-    <div className="scene-canvas" ref={mountRef} aria-label={`Rotatable 3D model of ${profile.name}`}>
+    <div className="scene-canvas" aria-label={`Rotatable 3D model of ${profile.name}`}>
+      <div className="scene-canvas-mount" ref={mountRef} />
       {fallback && <div className="scene-fallback"><ScanLine size={22} /><b>WebGL unavailable</b><span>The numerical experiment remains active.</span></div>}
       {runMode && externalSmokeIntensity > .015 && <div className="external-chamber-smoke" style={{ "--smoke-strength": Math.min(.12, externalSmokeIntensity * .12) } as React.CSSProperties} aria-hidden="true"><i /><i /></div>}
       <div className="scene-axis"><i className="axis-x">X</i><i className="axis-y">Y</i><i className="axis-z">Z</i></div>
       <div className="scene-instruction">Drag to orbit · Wheel to zoom · Select a sensor</div>
-      {!runMode && <div className="scene-facility-readout"><span>CAVE hall</span><b>206 m² · 9 m clear</b><small>Independent exterior HVAC · −5…43 °C</small></div>}
-      {selectedData && <div className="scene-sensor-readout"><span>{selectedData.id} · {selectedData.kind}</span><b>{selectedValue == null ? "SELECTED" : selectedValue.toFixed(selectedData.kind === "PM" ? 0 : 1)}</b><small>{selectedValue == null ? "Pinned spatial node" : selectedData.kind === "PM" || selectedData.kind === "NOx" ? "µg/m³ · illustrative spatial offset" : "live CAVE reconstruction"}</small></div>}
+      {!runMode && <div className="scene-facility-readout"><span>UCL CAVE hall</span><b>206 m² · 9 m clear</b><small>Dual HVAC · exterior −5…43 °C · interior 10…28 °C</small></div>}
+      {selectedData && <div className="scene-sensor-readout"><span>{selectedData.id} · {selectedData.kind}</span><b>{selectedValue == null ? "SELECTED" : selectedValue.toFixed(selectedData.kind === "PM" ? 0 : 1)}</b><small>{selectedValue == null ? "Pinned spatial node" : selectedData.kind === "PM" || selectedData.kind === "NOx" ? "µg/m³ · model + illustrative spatial offset" : "model reconstruction · illustrative spatial offset"}</small></div>}
+      {runMode && <div className="scene-model-caveat">Single-zone model · one indoor mean · spatial variation is illustrative, not resolved.</div>}
     </div>
-    {!runMode && <div className="scene-specs"><span><b>{profile.floorArea}</b> test area</span><span><b>{profile.volume}</b> test volume</span><span><b>Dual HVAC</b> hall / interior</span><span><b>{totalAch.toFixed(2)} h⁻¹</b> total ACH</span></div>}
+    {!runMode && <div className="scene-specs"><span><b>{profile.floorArea}</b> test area</span><span><b>{profile.volume}</b> test volume</span><span><b>CAVE hall</b> high-bay envelope</span><span><b>{totalAch.toFixed(2)} h⁻¹</b> model ACH</span></div>}
   </section>;
 }

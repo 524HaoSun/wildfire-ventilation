@@ -7,7 +7,6 @@ import { BUILDING_PROFILES, BuildingScene3D } from "@/components/BuildingScene3D
 import { CaveSection } from "@/components/CaveSection";
 import { PlanSheet } from "@/components/PlanSheet";
 import { ScientificChart } from "@/components/ScientificChart";
-import caveHeroUrl from "@/assets/cave-entry-hero-cutaway_300980e2.png";
 import caveMarkUrl from "@/assets/cave-mark_84921330.png";
 import {
   CASES,
@@ -54,7 +53,7 @@ function fixedDayWindow(startIdx: number, length: number) {
   return { startIdx: safeStart, endIdx: Math.min(length - 1, safeStart + TARGET_WINDOW_HOURS - 1) };
 }
 
-function Provenance({ type, children }: { type: "measured" | "model" | "cave" | "illustrative"; children: React.ReactNode }) {
+function Provenance({ type, children }: { type: "measured" | "model" | "illustrative"; children: React.ReactNode }) {
   return <span className={`provenance-chip ${type}`}>{children}</span>;
 }
 
@@ -159,7 +158,7 @@ function DesignScreen({ state, setState, simulation, selectedSensor, setSelected
       </div>
       <div className="design-generate"><div className="button-row"><button className="secondary-button" onClick={() => setPlanOpen(true)}><FileText size={13} /> Plan sheet</button><button className="primary-button" onClick={() => { toast.success(`${profile.name} plan generated`); onAdvance(); }}><FileText size={13} /> Generate experiment</button></div><span>Proceed with the same building and sensor field.</span></div>
     </Panel>
-    <Panel className="design-scene-panel" eyebrow="2 · Orient" title="Interactive CAVE model" action={<div className="button-row"><Segmented value={sceneMode} values={["section", "3d"] as const} labels={["Section", "3D"]} onChange={setSceneMode} /><Provenance type="cave">CAVE setup</Provenance></div>}>
+    <Panel className="design-scene-panel" eyebrow="2 · Orient" title="Interactive CAVE model" action={<div className="button-row"><Segmented value={sceneMode} values={["section", "3d"] as const} labels={["Section", "3D"]} onChange={setSceneMode} /><Provenance type="illustrative">Facility schematic</Provenance></div>}>
       {sceneMode === "section" ? <CaveSection building={state.building} sensors={state.sensors} onSensorsChange={(sensors) => setState((current) => ({ ...current, sensors }))} selectedSensor={selectedSensor} onSensorSelect={setSelectedSensor} totalAch={params.totalAch} exteriorTempC={state.extTempC} interiorTempC={state.intTempC} ventMode={state.ventMode} /> : <BuildingScene3D building={state.building} sensors={state.sensors} totalAch={params.totalAch} selectedSensor={selectedSensor} onSensorSelect={setSelectedSensor} />}
     </Panel>
     <div className="design-evidence-column">
@@ -204,7 +203,7 @@ function RunScreen({ state, setState, simulation, minute, setMinute, selectedSen
         <div className="panel-body run-response-chart"><ScientificChart series={[{ label: "External PM₂.₅", values: simulation.externalMinute.filter((_, i) => i % 30 === 0), color: "#b64d32" }, { label: "Indoor PM₂.₅", values: simulation.indoorMinute.filter((_, i) => i % 30 === 0), color: "#0f6c62", dashed: true }]} markerIndex={Math.floor(minute / 30)} height={240} chartWidth={1200} yLabel="PM₂.₅ (µg/m³)" xLabel="Elapsed time" /></div>
         <div className="metric-band"><div className="metric"><label>External now</label><strong className="smoke">{currentOutdoor.toFixed(1)}</strong></div><div className="metric"><label>Indoor now</label><strong className="teal">{currentIndoor.toFixed(1)}</strong></div><div className="metric"><label>Peak / lag</label><strong>{simulation.indoorPeak.toFixed(1)} / {simulation.lagMinutes} min</strong></div></div>
       </Panel>
-      <Panel className="run-sensor-panel" eyebrow="Key sensors" title="Live"><div className="panel-body sensor-grid">{keySensors.map((sensor) => <button key={sensor.id} onClick={() => setSelectedSensor(sensor.id)} className={`sensor-tile ${sensor.id === pmRanked[0]?.id ? "hot" : ""} ${selectedSensor === sensor.id ? "selected" : ""}`}><div className="sensor-tile-head"><b>{sensor.id}</b><span>{sensor.kind}</span></div><div className="sensor-tile-value">{sensorValues[sensor.id].toFixed(sensor.kind === "PM" ? 0 : 1)} <small>{sensor.kind === "PM" || sensor.kind === "NOx" ? "µg/m³" : sensor.kind === "CO2" ? "ppm" : sensor.kind === "T" ? "°C" : "%"}</small></div></button>)}</div></Panel>
+      <Panel className="run-sensor-panel" eyebrow="Key sensors" title="Modelled sensors" action={<Provenance type="model">Model prediction</Provenance>}><div className="panel-body sensor-grid">{keySensors.map((sensor) => <button key={sensor.id} onClick={() => setSelectedSensor(sensor.id)} className={`sensor-tile ${sensor.id === pmRanked[0]?.id ? "hot" : ""} ${selectedSensor === sensor.id ? "selected" : ""}`}><div className="sensor-tile-head"><b>{sensor.id}</b><span>{sensor.kind}</span></div><div className="sensor-tile-value">{sensorValues[sensor.id].toFixed(sensor.kind === "PM" ? 0 : 1)} <small>{sensor.kind === "PM" || sensor.kind === "NOx" ? "µg/m³" : sensor.kind === "CO2" ? "ppm" : sensor.kind === "T" ? "°C" : "%"}</small></div></button>)}</div><p className="run-sensor-caveat">Single-zone model · one indoor mean · inter-sensor spatial variation is illustrative.</p></Panel>
     </div>
   </div></main>;
 }
@@ -296,7 +295,7 @@ function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setShare
   const tradeoffDetail = expandedTradeoff === "pollution" ? <><b>Peak comparison</b><span>{strategies[0].peak.toFixed(1)} sealed − {strategies.find((item) => item.name === guidance.recommendedStrategy)?.peak.toFixed(1)} recommended, divided by sealed peak. Source: deterministic mass-balance strategy runs.</span></> : expandedTradeoff === "heat" ? <><b>Heat rule</b><span>{state.extTempC.toFixed(1)} °C outdoor vs {guidanceRules.heatThreshold.toFixed(0)} °C threshold; limited unconditioned supply raises the conflict rating.</span></> : expandedTradeoff === "fresh" ? <><b>Fresh-air rule</b><span>{simulation.params.lambdaSup.toFixed(2)} h⁻¹ supply vs {guidanceRules.minimumFreshAirAch.toFixed(1)} h⁻¹ minimum across {windowValues.length} h.</span></> : null;
   return <main className="screen analyse-screen" tabIndex={0} onWheel={handleWheel} onKeyDown={(event) => { if (event.key === "PageDown") { event.preventDefault(); setChapter(analysisChapter + 1); } if (event.key === "PageUp") { event.preventDefault(); setChapter(analysisChapter - 1); } }} aria-label="Analysis atlas. Scroll or use Page Up and Page Down to change evidence focus.">
     <div className="screen-grid grid-analyse">
-      <Panel className={`analysis-panel ${analysisChapter === 0 ? "chapter-active" : "chapter-muted"}`} eyebrow="1. Air-exchange characterisation" action={<Provenance type="cave">CAVE measurement</Provenance>}>
+      <Panel className={`analysis-panel ${analysisChapter === 0 ? "chapter-active" : "chapter-muted"}`} eyebrow="1. Air-exchange characterisation" action={<div className="button-row"><Provenance type="illustrative">Synthetic tracer</Provenance><Provenance type="model">ACH fit</Provenance></div>}>
         <div className="analysis-content"><ScientificChart series={[{ label: "Measured tracer", values: tracer.points.map((p) => p.observed), color: "#202827" }, { label: "Exponential fit", values: tracer.points.map((p) => p.fitted), color: "#b64d32", dashed: true }]} markerIndex={Math.min(tracer.points.length - 1, Math.floor(sharedMinute / Math.max(1, simulation.indoorMinute.length / tracer.points.length)))} height={230} yLabel="CO₂ (ppm)" xLabel="Time (h)" /><div><div className="eyebrow">Air-change rate</div><div className="fit-number">{tracer.estimate.toFixed(2)}<small> h⁻¹</small></div><p className="mono muted">95% CI<br />[{Math.max(0, tracer.estimate - tracer.ci95).toFixed(2)}, {(tracer.estimate + tracer.ci95).toFixed(2)}]</p></div></div>
       </Panel>
       <Panel className={`analysis-panel ${analysisChapter === 1 ? "chapter-active" : "chapter-muted"}`} eyebrow="2. Parameter estimation" action={<Provenance type="model">Inverse model</Provenance>}>
@@ -337,14 +336,69 @@ function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setShare
 }
 
 function BootHeroVisual() {
-  const sensorPoints = [[19, 61, 0], [34, 37, 1.2], [50, 69, 2.1], [67, 42, .7], [82, 60, 1.7]];
+  const sensorPoints = [[32, 65, 0], [45, 50, 1.2], [55, 69, 2.1], [65, 49, .7], [75, 62, 1.7]];
   return <figure className="boot-hero" aria-label="CAVE controlled-environment chamber with an instrumented test building and visualised airflow">
-    <div className="boot-hero-media"><img src={caveHeroUrl} alt="A cutaway research building nested inside the CAVE controlled-environment chamber" /></div>
+    <div className="boot-hero-media" aria-hidden="true">
+      <svg className="boot-hero-cave-visual" viewBox="0 0 1000 600">
+        <defs>
+          <linearGradient id="boot-hall-surface" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#edf4ef" stopOpacity=".35" />
+            <stop offset=".58" stopColor="#7f8f8a" stopOpacity=".16" />
+            <stop offset="1" stopColor="#101817" stopOpacity=".3" />
+          </linearGradient>
+          <linearGradient id="boot-test-cell" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stopColor="#eef3ef" stopOpacity=".5" />
+            <stop offset="1" stopColor="#d96c2c" stopOpacity=".1" />
+          </linearGradient>
+          <pattern id="boot-floor-grid" width="42" height="34" patternUnits="userSpaceOnUse">
+            <path d="M42 0H0V34" fill="none" stroke="#7ec2bd" strokeOpacity=".16" strokeWidth="1" />
+          </pattern>
+        </defs>
+        <path className="boot-hall-shell" d="M76 500V96l46-42h754l48 42v404H76Z" fill="url(#boot-hall-surface)" />
+        <path className="boot-hall-rear" d="M150 450V122h700v328H150Z" />
+        <path className="boot-floor-plane" d="M76 500h848L768 414H230Z" fill="url(#boot-floor-grid)" />
+        <g className="boot-ceiling-grid">
+          {[168, 242, 316, 390, 464, 538, 612, 686, 760, 834].map((x) => <path key={x} d={`M${x} 64v75`} />)}
+          {[0, 1, 2].map((row) => <path key={row} d={`M134 ${82 + row * 24}H866`} />)}
+        </g>
+        <g className="boot-supply-rail">
+          <rect x="190" y="102" width="620" height="28" rx="5" />
+          {[230, 300, 370, 440, 510, 580, 650, 720, 790].map((x) => <path key={x} d={`M${x} 130v40m-14-10h28`} />)}
+        </g>
+        <g className="boot-return-wall">
+          <rect x="780" y="172" width="84" height="222" rx="3" />
+          {[0, 1, 2, 3, 4].map((row) => <path key={row} d={`M796 ${200 + row * 36}h52`} />)}
+          {[0, 1, 2].map((col) => <path key={col} d={`M808 ${188}v188`} />)}
+        </g>
+        <g className="boot-plant-block">
+          <rect x="112" y="360" width="84" height="96" />
+          <path d="M128 384h52M128 404h52M128 424h52" />
+          <path d="M196 390C254 352 296 341 362 354" />
+        </g>
+        <g className="boot-test-building">
+          <path d="M335 432V270l160-70 174 70v162H335Z" fill="url(#boot-test-cell)" />
+          <path d="M318 270l177-80 192 80M335 270v162M669 270v162M335 350h334M495 198v234" />
+          <path d="M380 296h72v54h-72zM548 296h72v54h-72zM386 370h54v62h-54zM548 370h80v62h-80z" />
+          <path d="M368 250h254" className="boot-service-rack" />
+        </g>
+        <g className="boot-sensor-masts">
+          {[378, 465, 555, 638].map((x, index) => <g key={x}>
+            <path d={`M${x} 432v-${70 + (index % 2) * 30}`} />
+            <rect x={x - 10} y={350 - (index % 2) * 30} width="20" height="16" rx="2" />
+            <path d={`M${x - 12} 432h24m-18 0l-16 18m34-18l16 18`} />
+          </g>)}
+        </g>
+        <g className="boot-reference-lines">
+          <path d="M76 520h848M76 512v16M924 512v16" />
+          <path d="M50 96v404M42 96h16M42 500h16" />
+        </g>
+      </svg>
+    </div>
     <div className="boot-hero-grid" aria-hidden="true" />
     <svg className="boot-hero-section-lines" viewBox="0 0 1000 600" aria-hidden="true">
-      <path className="section-envelope" d="M74 486V104l42-42h790l38 42v382H74Z" />
-      <path className="section-building" d="M307 475V245l183-96 215 111v215M307 245h398M490 149v326" />
-      <path className="section-registration" d="M45 500h930M74 520h870M74 512v16M944 512v16M52 104v382M44 104h16M44 486h16" />
+      <path className="section-envelope" d="M74 500V96l48-42h756l48 42v404H74Z" />
+      <path className="section-building" d="M328 432V270l168-78 178 78v162M328 270h346M496 192v240" />
+      <path className="section-registration" d="M45 520h930M74 540h870M74 532v16M944 532v16M52 96v404M44 96h16M44 500h16" />
     </svg>
     <svg className="boot-hero-airflow" viewBox="0 0 1000 600" aria-hidden="true">
       <path d="M42 390C190 298 268 288 410 342S676 438 958 270" />
@@ -356,8 +410,8 @@ function BootHeroVisual() {
     <div className="boot-hero-dimension boot-hero-dimension-x" aria-hidden="true"><i /><span>206 m² controlled environment</span><i /></div>
     <div className="boot-hero-dimension boot-hero-dimension-y" aria-hidden="true"><i /><span>9 m clear height</span><i /></div>
     <div className="boot-hero-registration" aria-hidden="true"><i /><i /><i /><i /></div>
-    <figcaption className="boot-hero-caption"><span>Architectural section / measured boundary</span><b>01</b></figcaption>
-    <div className="boot-hero-status" aria-hidden="true"><i /> Measured airflow / model overlay</div>
+    <figcaption className="boot-hero-caption"><span>UCL CAVE hall / instrumented test volume</span><b>01</b></figcaption>
+    <div className="boot-hero-status" aria-hidden="true"><i /> Dual HVAC / sensor reconstruction</div>
   </figure>;
 }
 
