@@ -7,6 +7,7 @@ import { BUILDING_PROFILES, BuildingScene3D } from "@/components/BuildingScene3D
 import { CaveSection } from "@/components/CaveSection";
 import { PlanSheet } from "@/components/PlanSheet";
 import { ScientificChart } from "@/components/ScientificChart";
+import caveHero3dUrl from "@/assets/cave-hero-3d-v2.webp";
 import caveMarkUrl from "@/assets/cave-mark_84921330.png";
 import {
   CASES,
@@ -411,82 +412,24 @@ function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setShare
 }
 
 function BootHeroVisual() {
-  const sensorPoints = [[32, 65, 0], [45, 50, 1.2], [55, 69, 2.1], [65, 49, .7], [75, 62, 1.7]];
-  return <figure className="boot-hero" aria-label="CAVE controlled-environment chamber with an instrumented test building and visualised airflow">
-    <div className="boot-hero-media" aria-hidden="true">
-      <svg className="boot-hero-cave-visual" viewBox="0 0 1000 600">
-        <defs>
-          <linearGradient id="boot-hall-surface" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0" stopColor="#edf4ef" stopOpacity=".35" />
-            <stop offset=".58" stopColor="#7f8f8a" stopOpacity=".16" />
-            <stop offset="1" stopColor="#101817" stopOpacity=".3" />
-          </linearGradient>
-          <linearGradient id="boot-test-cell" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0" stopColor="#eef3ef" stopOpacity=".5" />
-            <stop offset="1" stopColor="#d96c2c" stopOpacity=".1" />
-          </linearGradient>
-          <pattern id="boot-floor-grid" width="42" height="34" patternUnits="userSpaceOnUse">
-            <path d="M42 0H0V34" fill="none" stroke="#7ec2bd" strokeOpacity=".16" strokeWidth="1" />
-          </pattern>
-        </defs>
-        <path className="boot-hall-shell" d="M76 500V96l46-42h754l48 42v404H76Z" fill="url(#boot-hall-surface)" />
-        <path className="boot-hall-rear" d="M150 450V122h700v328H150Z" />
-        <path className="boot-floor-plane" d="M76 500h848L768 414H230Z" fill="url(#boot-floor-grid)" />
-        <g className="boot-ceiling-grid">
-          {[168, 242, 316, 390, 464, 538, 612, 686, 760, 834].map((x) => <path key={x} d={`M${x} 64v75`} />)}
-          {[0, 1, 2].map((row) => <path key={row} d={`M134 ${82 + row * 24}H866`} />)}
-        </g>
-        <g className="boot-supply-rail">
-          <rect x="190" y="102" width="620" height="28" rx="5" />
-          {[230, 300, 370, 440, 510, 580, 650, 720, 790].map((x) => <path key={x} d={`M${x} 130v40m-14-10h28`} />)}
-        </g>
-        <g className="boot-return-wall">
-          <rect x="780" y="172" width="84" height="222" rx="3" />
-          {[0, 1, 2, 3, 4].map((row) => <path key={row} d={`M796 ${200 + row * 36}h52`} />)}
-          {[0, 1, 2].map((col) => <path key={col} d={`M808 ${188}v188`} />)}
-        </g>
-        <g className="boot-plant-block">
-          <rect x="112" y="360" width="84" height="96" />
-          <path d="M128 384h52M128 404h52M128 424h52" />
-          <path d="M196 390C254 352 296 341 362 354" />
-        </g>
-        <g className="boot-test-building">
-          <path d="M335 432V270l160-70 174 70v162H335Z" fill="url(#boot-test-cell)" />
-          <path d="M318 270l177-80 192 80M335 270v162M669 270v162M335 350h334M495 198v234" />
-          <path d="M380 296h72v54h-72zM548 296h72v54h-72zM386 370h54v62h-54zM548 370h80v62h-80z" />
-          <path d="M368 250h254" className="boot-service-rack" />
-        </g>
-        <g className="boot-sensor-masts">
-          {[378, 465, 555, 638].map((x, index) => <g key={x}>
-            <path d={`M${x} 432v-${70 + (index % 2) * 30}`} />
-            <rect x={x - 10} y={350 - (index % 2) * 30} width="20" height="16" rx="2" />
-            <path d={`M${x - 12} 432h24m-18 0l-16 18m34-18l16 18`} />
-          </g>)}
-        </g>
-        <g className="boot-reference-lines">
-          <path d="M76 520h848M76 512v16M924 512v16" />
-          <path d="M50 96v404M42 96h16M42 500h16" />
-        </g>
-      </svg>
+  return <figure className="boot-hero boot-hero-photo" aria-label="3D view of the UCL CAVE controlled-environment chamber with an instrumented test volume">
+    <img className="boot-hero-image" src={caveHero3dUrl} alt="UCL CAVE controlled-environment chamber with a test volume, wildfire-smoke plume, sensors, HVAC services and mitigation equipment" />
+    <div className="boot-hero-vignette" aria-hidden="true" />
+    <div className="boot-chamber-smoke" aria-hidden="true"><i /><i /><i /></div>
+    <div className="boot-hero-label">
+      <span>UCL CAVE Research Group</span>
+      <b>Urban Air Quality and Fluid Mechanics</b>
+      <small>Full-scale chamber · wildfire smoke mitigation</small>
     </div>
-    <div className="boot-hero-grid" aria-hidden="true" />
-    <svg className="boot-hero-section-lines" viewBox="0 0 1000 600" aria-hidden="true">
-      <path className="section-envelope" d="M74 500V96l48-42h756l48 42v404H74Z" />
-      <path className="section-building" d="M328 432V270l168-78 178 78v162M328 270h346M496 192v240" />
-      <path className="section-registration" d="M45 520h930M74 540h870M74 532v16M944 532v16M52 96v404M44 96h16M44 500h16" />
-    </svg>
-    <svg className="boot-hero-airflow" viewBox="0 0 1000 600" aria-hidden="true">
-      <path d="M42 390C190 298 268 288 410 342S676 438 958 270" />
-      <path d="M58 454C246 352 369 380 504 414S746 438 932 344" />
-      <path d="M166 248C306 174 425 205 548 256S745 314 886 216" />
-    </svg>
-    <div className="boot-hero-sensors" aria-hidden="true">{sensorPoints.map(([x, y, delay], index) => <i key={index} style={{ "--sensor-x": `${x}%`, "--sensor-y": `${y}%`, "--sensor-delay": `${delay}s` } as React.CSSProperties} />)}</div>
-    <div className="boot-hero-scan" aria-hidden="true" />
-    <div className="boot-hero-dimension boot-hero-dimension-x" aria-hidden="true"><i /><span>206 m² controlled environment</span><i /></div>
-    <div className="boot-hero-dimension boot-hero-dimension-y" aria-hidden="true"><i /><span>9 m clear height</span><i /></div>
-    <div className="boot-hero-registration" aria-hidden="true"><i /><i /><i /><i /></div>
-    <figcaption className="boot-hero-caption"><span>UCL CAVE hall / instrumented test volume</span><b>01</b></figcaption>
-    <div className="boot-hero-status" aria-hidden="true"><i /> Dual HVAC / sensor reconstruction</div>
+    <div className="boot-hero-status-card" aria-hidden="true">
+      <span>Chamber setup</span>
+      <b>Smoke challenge contained</b>
+      <small>Sensor array · filtration response · airflow control</small>
+    </div>
+    <div className="boot-hero-provenance" aria-hidden="true">
+      <span>WILDFIRE SMOKE MITIGATION</span>
+      <b>PM · CO₂ tracer · ventilation strategy</b>
+    </div>
   </figure>;
 }
 
@@ -512,15 +455,21 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
     <div className="boot-smoke-field" aria-hidden="true"><i /><i /><i /></div>
     <button className="boot-skip" onClick={() => setSkipped(true)}>Reveal complete plate</button>
     <header className="entry-header">
-      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE Wildfire</span><i>/</i><small>Workbench</small></div>
-      <div className="entry-meta"><span>Research Fellow interview · Dr Hao Sun</span><span>UCL CAVE · 2026</span></div>
+      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE Wildfire</span><i>/</i><small>Smoke Mitigation</small></div>
+      <div className="entry-meta"><span>Research Fellow Interview</span><span>9 July 2026</span></div>
     </header>
     <div className="boot-layout" aria-label="CAVE Experiment Workbench instrument boot sequence">
       <section className="entry-copy">
-        <div className="entry-kicker"><span>01</span> UCL CAVE · Research Fellow interview</div>
-        <div className="boot-wordmark">CAVE Wildfire <span>Workbench</span></div>
-        <h1>Research Fellow Interview Demo for Wildfire Indoor Safety</h1>
-        <p className="entry-thesis">Prepared for Dr Hao Sun: measured wildfire smoke episodes become controlled CAVE experiments, model predictions and decision evidence.</p>
+        <div className="entry-kicker"><span>01</span> Faculty of Engineering Sciences · CEGE</div>
+        <div className="boot-wordmark">Research Fellow in Wildfire Smoke Mitigation</div>
+        <h1><span>Wildfire Smoke</span><span>Mitigation Demo</span><em>Research Fellow Interview</em></h1>
+        <p className="entry-thesis">Dr Hao Sun · 9 July 2026</p>
+        <p className="entry-summary">For the UCL CAVE Urban Air Quality and Fluid Mechanics Research Group. Full-scale experiments for wildfire smoke exposure, pollutant ingress, indoor transport and building protection strategies.</p>
+        <div className="entry-proof-grid" aria-label="Workbench evidence scope">
+          <span><b>Full-scale</b> building-within-building chamber</span>
+          <span><b>Wildfire</b> smoke and air quality hazards</span>
+          <span><b>Mitigation</b> ventilation and filtration strategies</span>
+        </div>
         <a
           className="entry-button"
           href="?screen=1"
