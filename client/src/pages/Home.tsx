@@ -422,7 +422,23 @@ function RunScreen({ state, setState, simulation, minute, setMinute, selectedSen
     <div className="run-main" style={{ gridColumn: "1 / -1" }}>
       <Panel className="run-scene-panel" eyebrow="Spatial check" title={BUILDING_PROFILES[state.building].shortName}><BuildingScene3D building={state.building} sensors={state.sensors} totalAch={simulation.params.totalAch} runMode externalSmokeIntensity={Math.max(0, Math.min(1, currentOutdoor / 410.1))} activeSensor={pmRanked[0]?.id} sensorValues={sensorValues} selectedSensor={selectedSensor} onSensorSelect={setSelectedSensor} /></Panel>
       <Panel className="run-response-panel" eyebrow="Primary evidence" title="External → indoor response">
-        <div className="panel-body run-response-chart"><ScientificChart series={[{ label: "External PM₂.₅", values: simulation.externalMinute.filter((_, i) => i % 30 === 0), color: "#b64d32" }, { label: "Indoor PM₂.₅", values: simulation.indoorMinute.filter((_, i) => i % 30 === 0), color: "#0f6c62", dashed: true }]} markerIndex={Math.floor(minute / 30)} height={240} chartWidth={1200} yLabel="PM₂.₅ (µg/m³)" xLabel="Elapsed time" /></div>
+        <div className="run-replay-strip">
+          <button className="transport run-transport" onClick={() => setPlaying((value) => !value)} aria-label={playing ? "Pause replay" : "Play replay"}>{playing ? <Pause size={15} /> : <Play size={15} />}</button>
+          <div className="run-replay-track">
+            <div className="run-replay-head"><span>Experiment replay</span><strong>{String(hours).padStart(2, "0")}:{String(mins).padStart(2, "0")}:00</strong></div>
+            <input aria-label="Experiment timeline" type="range" min="0" max={simulation.indoorMinute.length - 1} value={minute} onChange={(e) => setMinute(+e.target.value)} />
+          </div>
+          <Segmented value={state.playbackSpeed} values={[1, 5, 10] as const} labels={["×1", "×5", "×10"]} onChange={(playbackSpeed) => setState((s) => ({ ...s, playbackSpeed }))} />
+          <button className="secondary-button replay-reset" onClick={() => { setMinute(0); setPlaying(false); }}><RotateCcw size={13} /> Reset</button>
+        </div>
+        <div className="run-response-body">
+          <div className="panel-body run-response-chart"><ScientificChart series={[{ label: "External PM₂.₅", values: simulation.externalMinute.filter((_, i) => i % 30 === 0), color: "#b64d32" }, { label: "Indoor PM₂.₅", values: simulation.indoorMinute.filter((_, i) => i % 30 === 0), color: "#0f6c62", dashed: true }]} markerIndex={Math.floor(minute / 30)} height={240} chartWidth={900} yLabel="PM₂.₅ (µg/m³)" xLabel="Elapsed time" /></div>
+          <aside className="run-response-brief" aria-label="Replay evidence summary">
+            <article className="run-brief-card boundary-card"><span>Boundary condition</span><b>{currentOutdoor.toFixed(1)} <small>µg/m³</small></b><em>Measured outdoor replay input.</em></article>
+            <article className="run-brief-card indoor-card"><span>Indoor response</span><b>{currentIndoor.toFixed(1)} <small>µg/m³</small></b><em>Protected-zone concentration.</em></article>
+            <article className="run-brief-card lag-card"><span>Response lag</span><b>{simulation.lagMinutes} <small>min</small></b><em>Peak-to-peak model delay.</em></article>
+          </aside>
+        </div>
         <div className="metric-band"><div className="metric"><label>External now</label><strong className="smoke">{currentOutdoor.toFixed(1)}</strong></div><div className="metric"><label>Indoor now</label><strong className="teal">{currentIndoor.toFixed(1)}</strong></div><div className="metric"><label>Peak / lag</label><strong>{simulation.indoorPeak.toFixed(1)} / {simulation.lagMinutes} min</strong></div></div>
       </Panel>
       <Panel className="run-sensor-panel" eyebrow="Key sensors" title="Modelled sensors" action={<Provenance type="model">Model prediction</Provenance>}><div className="panel-body sensor-grid">{keySensors.map((sensor) => <button key={sensor.id} onClick={() => setSelectedSensor(sensor.id)} className={`sensor-tile ${sensor.id === pmRanked[0]?.id ? "hot" : ""} ${selectedSensor === sensor.id ? "selected" : ""}`}><div className="sensor-tile-head"><b>{sensor.id}</b><span>{sensor.kind}</span></div><div className="sensor-tile-value">{sensorValues[sensor.id].toFixed(sensor.kind === "PM" ? 0 : 1)} <small>{sensor.kind === "PM" || sensor.kind === "NOx" ? "µg/m³" : sensor.kind === "CO2" ? "ppm" : sensor.kind === "T" ? "°C" : "%"}</small></div></button>)}</div><p className="run-sensor-caveat">Single-zone model · one indoor mean · inter-sensor spatial variation is illustrative.</p></Panel>

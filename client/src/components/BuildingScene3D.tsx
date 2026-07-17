@@ -98,9 +98,9 @@ const CAMERA_POSITIONS: Record<CameraView, [number, number, number]> = {
 };
 
 function isoCameraPosition(building: Building, runMode: boolean): [number, number, number] {
-  if (building === "two_storey") return runMode ? [11.2, 8.4, 12.2] : [10.8, 7.95, 12.25];
-  if (building === "bus") return runMode ? [11.4, 5.4, 10.6] : [9.2, 4.05, 9.25];
-  return runMode ? [10.2, 6.6, 11.2] : [8.05, 5.2, 9.05];
+  if (building === "two_storey") return runMode ? [13.6, 9.9, 14.8] : [10.8, 7.95, 12.25];
+  if (building === "bus") return runMode ? [14.2, 6.6, 13.4] : [9.2, 4.05, 9.25];
+  return runMode ? [13.2, 8.4, 14.5] : [8.05, 5.2, 9.05];
 }
 
 function addEdges(mesh: THREE.Mesh, group: THREE.Object3D, color = 0x31413f, opacity = .7) {
@@ -724,7 +724,7 @@ export function BuildingScene3D({
 
     const scene = new THREE.Scene();
     scene.fog = new THREE.Fog(0xe8ece8, 24, 46);
-    const camera = new THREE.PerspectiveCamera(runMode ? 36 : 34, 1, .1, 100);
+    const camera = new THREE.PerspectiveCamera(runMode ? 43 : 34, 1, .1, 100);
     const initialCameraPosition = isoCameraPosition(building, runMode);
     camera.position.set(...initialCameraPosition);
     cameraRef.current = camera;

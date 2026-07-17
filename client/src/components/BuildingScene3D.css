@@ -381,3 +381,95 @@
   from{transform:translate3d(-5%,10%,0) scale(.92)}
   to{transform:translate3d(9%,-10%,0) scale(1.08)}
 }
+
+/* Run page integration: keep the model clean inside the smaller spatial panel. */
+.building-scene[data-run-mode="true"]{
+  grid-template-rows:46px minmax(0,1fr);
+}
+.building-scene[data-run-mode="true"] .scene-toolbar{
+  min-height:46px;
+  padding-inline:14px;
+  background:linear-gradient(90deg,#fbfdf9,#eef7f2);
+}
+.building-scene[data-run-mode="true"] .scene-identity b{
+  font-size:16.5px;
+}
+.building-scene[data-run-mode="true"] .view-switch button{
+  height:32px;
+  min-width:46px;
+  padding-inline:10px;
+  font-size:11.5px;
+}
+.building-scene[data-run-mode="true"] .scene-canvas{
+  background:
+    radial-gradient(circle at 54% 32%, rgba(255,253,246,.98), transparent 46%),
+    linear-gradient(90deg, rgba(214,231,226,.78) 0 13%, rgba(248,250,246,.98) 32% 70%, rgba(214,231,226,.78) 88% 100%);
+}
+.building-scene[data-run-mode="true"] .scene-sensor-readout{
+  left:18px;
+  right:18px;
+  top:auto;
+  bottom:18px;
+  width:auto;
+  min-height:58px;
+  grid-template-columns:auto auto minmax(0,1fr);
+  align-items:center;
+  gap:12px;
+  padding:11px 14px;
+  background:rgba(17,37,32,.92);
+  border-left:0;
+  border-top:4px solid #c75b38;
+  box-shadow:0 15px 30px rgba(17,34,30,.16);
+}
+.building-scene[data-run-mode="true"] .scene-sensor-readout span{
+  font-size:12px;
+  color:#c9e5dd;
+  white-space:nowrap;
+}
+.building-scene[data-run-mode="true"] .scene-sensor-readout b{
+  font-size:25px;
+  white-space:nowrap;
+}
+.building-scene[data-run-mode="true"] .scene-sensor-readout small{
+  font-size:11.5px;
+  line-height:1.22;
+}
+.building-scene[data-run-mode="true"] .scene-model-caveat{
+  display:none;
+}
+
+@media(max-width:1500px),(max-height:820px){
+  .building-scene[data-run-mode="true"]{
+    grid-template-rows:42px minmax(0,1fr);
+  }
+  .building-scene[data-run-mode="true"] .scene-toolbar{
+    min-height:42px;
+    padding-inline:10px;
+  }
+  .building-scene[data-run-mode="true"] .scene-identity b{
+    font-size:14px;
+  }
+  .building-scene[data-run-mode="true"] .view-switch button{
+    height:29px;
+    min-width:39px;
+    padding-inline:7px;
+    font-size:10.5px;
+  }
+  .building-scene[data-run-mode="true"] .scene-sensor-readout{
+    left:12px;
+    right:12px;
+    bottom:12px;
+    min-height:48px;
+    gap:8px;
+    padding:8px 10px;
+  }
+  .building-scene[data-run-mode="true"] .scene-sensor-readout span{
+    font-size:10.5px;
+  }
+  .building-scene[data-run-mode="true"] .scene-sensor-readout b{
+    font-size:20px;
+  }
+  .building-scene[data-run-mode="true"] .scene-sensor-readout small{
+    font-size:10px;
+  }
+}
