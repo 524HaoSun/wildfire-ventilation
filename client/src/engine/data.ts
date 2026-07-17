@@ -36,14 +36,14 @@ export const CASES: Record<SelectedCase, CaseDataset> = {
   london2022: {
     id: "london2022",
     title: "London · July 2022",
-    subtitle: "Heatwave + urban-edge wildfires",
+    subtitle: "Record heatwave + air-quality stress",
     site: "London Bloomsbury · AURN CLL2",
     instrument: "FIDAS · ratified",
     sourceLabel: "DEFRA AURN",
     timestamps: london.london_2022_heatwave.timestamps,
     pm25: london.london_2022_heatwave.pm25,
     o3: london.london_2022_heatwave.o3,
-    context: ["40.3 °C UK record", "Wennington wildfire, East London"],
+    context: ["40.3 °C UK record", "Urban heat exposure"],
   },
 };
 

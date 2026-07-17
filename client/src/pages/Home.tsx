@@ -9,6 +9,8 @@ import { PlanSheet } from "@/components/PlanSheet";
 import { ScientificChart } from "@/components/ScientificChart";
 import caveHero3dUrl from "@/assets/cave-hero-3d-v2.webp";
 import caveMarkUrl from "@/assets/cave-mark_84921330.png";
+import gisLondonBasemapUrl from "@/assets/gis-london-basemap.png";
+import gisNewYorkBasemapUrl from "@/assets/gis-new-york-basemap.png";
 import {
   CASES,
   DEFAULT_EXPERIMENT_STATE,
@@ -33,8 +35,8 @@ const STEPS = ["Challenge", "Design", "Run", "Analyse"];
 const TARGET_WINDOW_HOURS = 24;
 const PM25_24H_GUIDELINE = 15;
 const EVENT_CONTEXT: Record<SelectedCase, string> = {
-  nyc2023: "Canadian wildfire smoke · New York sky turned orange",
-  london2022: "Wennington wildfire, East London · UK's first 40 °C day",
+  nyc2023: "Canadian wildfire smoke transport",
+  london2022: "UK record heatwave and urban air-quality stress",
 };
 const CASE_GIS_META: Record<SelectedCase, {
   place: string;
@@ -53,10 +55,47 @@ const CASE_GIS_META: Record<SelectedCase, {
   london2022: {
     place: "Bloomsbury, London",
     coordinate: "51.52°N · 0.13°W",
-    sourceRegion: "Urban-edge wildfire + heatwave",
-    transport: "A local-to-regional fire and heat episode stresses the smoke, heat and fresh-air trade-off.",
-    operationalCue: "Use the CAVE exterior setpoint to test ventilation choices under simultaneous heat stress.",
+    sourceRegion: "London heatwave exposure corridor",
+    transport: "A 40.3 °C heatwave is translated into the CAVE exterior setpoint, with PM₂.₅ and O₃ used as air-quality context.",
+    operationalCue: "Treat heat as the primary London stressor; use PM₂.₅ and O₃ traces as co-exposure context.",
   },
+};
+type MapFocus = "source" | "plume" | "site";
+const MAP_FOCUS_LABELS: Record<SelectedCase, Record<MapFocus, string>> = {
+  nyc2023: {
+    source: "Source",
+    plume: "Diffusion",
+    site: "Receptor",
+  },
+  london2022: {
+    source: "Heat field",
+    plume: "Thermal route",
+    site: "Receptor",
+  },
+};
+const MAP_FOCUS_COPY: Record<SelectedCase, Record<MapFocus, string>> = {
+  nyc2023: {
+    source: "Boreal fire regions sit outside the city frame; the map shows the arriving urban boundary condition.",
+    plume: "A designed diffusion layer shows how the long-range PM₂.₅ plume reaches the receptor.",
+    site: "Queens College 2 anchors the measured urban boundary condition for CAVE replay.",
+  },
+  london2022: {
+    source: "The London case is driven by the record heat field, not a wildfire-smoke source.",
+    plume: "The thermal route highlights an urban heat corridor and co-exposure context without smoke styling.",
+    site: "London Bloomsbury provides the measured receptor trace for comparison and replay.",
+  },
+};
+const CASE_EVIDENCE_CARDS: Record<SelectedCase, Array<{ label: string; title: string; detail: string }>> = {
+  nyc2023: [
+    { label: "Monitoring receptor", title: "Queens College 2", detail: "AQS 36-081-0124" },
+    { label: "Transport layer", title: "Wildfire PM₂.₅ plume", detail: "route + diffusion overlay" },
+    { label: "CAVE boundary", title: "Measured outdoor PM", detail: "EPA AQS trace drives replay" },
+  ],
+  london2022: [
+    { label: "Monitoring receptor", title: "London Bloomsbury", detail: "AURN CLL2" },
+    { label: "Heat driver", title: "40.3 °C heatwave", detail: "thermal corridor overlay" },
+    { label: "Co-exposure context", title: "PM₂.₅ + O₃ trace", detail: "DEFRA AURN evidence layer" },
+  ],
 };
 const EVENT_EXTERNAL_TEMPERATURE: Record<SelectedCase, number> = {
   nyc2023: 29,
@@ -94,33 +133,114 @@ function formatTimestamp(timestamp: string) {
   return `${date.slice(5)} ${time}`;
 }
 
-function CaseRouteMap({ id }: { id: SelectedCase }) {
+function CaseRouteMap({ id, focus }: { id: SelectedCase; focus: MapFocus }) {
   const meta = CASE_GIS_META[id];
   const isNyc = id === "nyc2023";
-  return <figure className={`case-route-map case-route-${id}`} aria-label={`${meta.place} schematic smoke-transport context`}>
-    <svg viewBox="0 0 320 140" role="img">
-      <title>{meta.place} smoke transport schematic</title>
-      <rect x="0" y="0" width="320" height="140" rx="0" />
-      <path className="map-grid" d="M28 16v108M84 16v108M140 16v108M196 16v108M252 16v108M12 36h296M12 74h296M12 112h296" />
+  const activeSource = focus === "source";
+  const activePlume = focus === "plume";
+  const activeSite = focus === "site";
+  return <figure className={`case-route-map case-route-${id} focus-${focus}`} aria-label={`${meta.place} GIS evidence context`}>
+    <img className="case-route-basemap" src={isNyc ? gisNewYorkBasemapUrl : gisLondonBasemapUrl} alt="" />
+    <div className="case-route-grade" />
+    <div className="map-design-grid" />
+    <svg className="case-route-overlay" viewBox="0 0 720 360" role="img">
+      <title>{isNyc ? "Wildfire smoke transport route into Queens" : "London heatwave thermal route into Bloomsbury"}</title>
+      <defs>
+        <filter id={`route-soft-${id}`} x="-20%" y="-30%" width="140%" height="160%">
+          <feGaussianBlur stdDeviation="16" />
+        </filter>
+        <filter id={`route-glow-${id}`} x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="7" result="blur" />
+          <feMerge>
+            <feMergeNode in="blur" />
+            <feMergeNode in="SourceGraphic" />
+          </feMerge>
+        </filter>
+        <linearGradient id={`route-line-${id}`} x1="0" x2="1" y1="0" y2="0">
+          <stop offset="0" stopColor={isNyc ? "#d6a27b" : "#d8a25a"} stopOpacity=".18" />
+          <stop offset=".55" stopColor={isNyc ? "#c86b45" : "#d27435"} stopOpacity=".86" />
+          <stop offset="1" stopColor="#0f6c62" stopOpacity=".9" />
+        </linearGradient>
+        <radialGradient id={`source-fill-${id}`} cx="50%" cy="50%" r="50%">
+          <stop offset="0" stopColor={isNyc ? "#f2aa7c" : "#f6c16f"} />
+          <stop offset=".7" stopColor={isNyc ? "#b64d32" : "#c9732e"} />
+          <stop offset="1" stopColor={isNyc ? "#84301f" : "#7b3f18"} />
+        </radialGradient>
+      </defs>
       {isNyc ? <>
-        <path className="map-land" d="M33 19c33-11 76-8 103 8 34 20 39 47 68 54 27 7 43-7 71 6 18 8 26 22 30 34H37c-16-14-24-31-22-50 2-21 8-42 18-52Z" />
-        <path className="map-plume" d="M63 37C103 52 131 66 164 76c31 9 64 11 95 27" />
-        <circle className="map-source" cx="70" cy="38" r="8" />
-        <circle className="map-site" cx="260" cy="104" r="7" />
-        <path className="map-ring" d="M238 104a22 22 0 1 0 44 0a22 22 0 1 0-44 0M222 104a38 38 0 1 0 76 0a38 38 0 1 0-76 0" />
-        <text x="42" y="29">CANADA FIRE REGION</text>
-        <text x="220" y="127">QUEENS AQS</text>
+        <g className="map-contours smoke-contours">
+          <ellipse cx="492" cy="208" rx="150" ry="54" />
+          <ellipse cx="502" cy="212" rx="104" ry="36" />
+          <ellipse cx="516" cy="219" rx="62" ry="22" />
+        </g>
+        <g className={`map-source-layer ${activeSource ? "active" : ""}`}>
+          <circle className="route-source-halo" cx="92" cy="70" r="30" />
+          <circle className="route-source" cx="92" cy="70" r="11" />
+        </g>
+        <g className={`map-plume-layer smoke-layer ${activePlume ? "active" : ""}`}>
+          <path className="smoke-diffusion smoke-diffusion-wide" d="M70 62C162 76 234 112 310 138C386 164 457 162 574 231" />
+          <path className="smoke-diffusion smoke-diffusion-mid" d="M88 79C177 93 240 124 313 152C395 182 477 178 584 236" />
+          <path className="smoke-diffusion smoke-diffusion-soft" d="M58 45C151 61 223 101 298 126C382 154 456 152 566 214" />
+          <path className="route-core" d="M92 70C184 88 248 124 324 151C400 178 474 178 586 235" />
+        </g>
+        <g className={`map-site-layer ${activeSite ? "active" : ""}`}>
+          <circle className="route-ring" cx="586" cy="235" r="35" />
+          <circle className="route-ring route-ring-outer" cx="586" cy="235" r="55" />
+          <circle className="route-site" cx="586" cy="235" r="10" />
+        </g>
+        <g className="map-route-callouts">
+          <path d="M105 84h78M586 235h-82" />
+          <circle cx="183" cy="84" r="3" />
+          <circle cx="504" cy="235" r="3" />
+        </g>
       </> : <>
-        <path className="map-land" d="M94 19c35-9 77 3 91 31 9 18 6 35 22 47 20 15 52 6 74 22H67c8-17 1-34 10-52 7-15 2-39 17-48Z" />
-        <path className="map-plume" d="M249 105C225 93 205 77 184 65c-29-15-56-20-89-24" />
-        <circle className="map-source" cx="247" cy="105" r="8" />
-        <circle className="map-site" cx="96" cy="42" r="7" />
-        <path className="map-ring" d="M78 42a18 18 0 1 0 36 0a18 18 0 1 0-36 0M64 42a32 32 0 1 0 64 0a32 32 0 1 0-64 0" />
-        <text x="68" y="30">BLOOMSBURY AURN</text>
-        <text x="204" y="126">EAST LONDON FIRE</text>
+        <g className="map-contours heat-contours">
+          <ellipse cx="510" cy="218" rx="158" ry="70" />
+          <ellipse cx="470" cy="196" rx="106" ry="48" />
+          <ellipse cx="408" cy="166" rx="58" ry="26" />
+        </g>
+        <g className={`map-source-layer heat-layer ${activeSource ? "active" : ""}`}>
+          <ellipse className="heat-field heat-field-wide" cx="560" cy="230" rx="150" ry="78" />
+          <ellipse className="heat-field heat-field-core" cx="560" cy="230" rx="72" ry="36" />
+        </g>
+        <g className={`map-plume-layer thermal-layer ${activePlume ? "active" : ""}`}>
+          <path className="thermal-band thermal-band-wide" d="M610 245C526 217 455 183 380 154C288 119 204 95 112 75" />
+          <path className="thermal-band thermal-band-mid" d="M604 249C512 218 441 184 367 153C281 118 198 91 111 72" />
+          <path className="route-core heat-route" d="M600 248C511 218 440 184 365 153C278 116 194 91 110 72" />
+        </g>
+        <g className={`map-site-layer ${activeSite ? "active" : ""}`}>
+          <circle className="route-ring route-ring-heat" cx="110" cy="72" r="34" />
+          <circle className="route-ring route-ring-outer route-ring-heat" cx="110" cy="72" r="54" />
+          <circle className="route-site" cx="110" cy="72" r="10" />
+        </g>
+        <g className="map-route-callouts heat-callouts">
+          <path d="M110 72h92M560 230h-86" />
+          <circle cx="202" cy="72" r="3" />
+          <circle cx="474" cy="230" r="3" />
+        </g>
       </>}
-      <text className="map-caption" x="14" y="130">SCHEMATIC GIS CUE · NOT A MEASURED SMOKE FIELD</text>
     </svg>
+    <div className="map-corner-frame" aria-hidden="true"><i /><i /><i /><i /></div>
+    <div className="map-overlay-labels" aria-hidden="true">
+      <span className="map-chip map-chip-mode">{isNyc ? "Smoke diffusion layer" : "Heat-exposure layer"}</span>
+      <span className="map-chip map-chip-site">{isNyc ? "Queens College 2 receptor" : "London Bloomsbury receptor"}</span>
+      <span className="map-chip map-chip-source">{isNyc ? "regional source vector" : "urban thermal field"}</span>
+      <span className="map-scale">0  |  10 km</span>
+    </div>
+    <div className="map-readout-card" aria-hidden="true">
+      <span>{isNyc ? "Boundary peak" : "Heat driver"}</span>
+      <b>{isNyc ? "410.1" : "40.3"}<small>{isNyc ? " µg/m³" : " °C"}</small></b>
+      <i>{isNyc ? "measured PM2.5" : "UK record day"}</i>
+    </div>
+    <div className="map-replay-card" aria-hidden="true">
+      <span>GIS layer</span>
+      <b>{isNyc ? "Outdoor PM boundary" : "Exterior heat boundary"}</b>
+      <em>CAVE replay</em>
+    </div>
+    <div className="map-side-scale" aria-hidden="true">
+      <span>{isNyc ? "PM plume density" : "thermal load"}</span>
+      <i />
+    </div>
   </figure>;
 }
 
@@ -129,12 +249,17 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
   const selected = getCaseDataset(state.selectedCase);
   const selectedPeak = peak(selected.pm25);
   const selectedMeta = CASE_GIS_META[state.selectedCase];
+  const selectedEvidence = CASE_EVIDENCE_CARDS[state.selectedCase];
+  const selectedFocusLabels = MAP_FOCUS_LABELS[state.selectedCase];
+  const isLondonCase = state.selectedCase === "london2022";
   const selectedMultiple = selectedPeak.value / PM25_24H_GUIDELINE;
   const targetWindow = fixedDayWindow(state.targetWindow.startIdx, selected.pm25.length);
+  const [mapFocus, setMapFocus] = useState<MapFocus>("site");
   const selectCase = (id: SelectedCase) => {
     const next = getCaseDataset(id);
     const nextPeak = peak(next.pm25);
     const targetWindow = fixedDayWindow(nextPeak.index - Math.floor(TARGET_WINDOW_HOURS / 2), next.pm25.length);
+    setMapFocus("site");
     setState((current) => ({
       ...current,
       selectedCase: id,
@@ -155,10 +280,16 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
           const itemPeak = peak(item.pm25);
           const meta = CASE_GIS_META[id];
           const anchorSummary = id === "nyc2023" ? `${anchors.nycRatio.toFixed(0)}× local baseline` : `O₃ peak ${anchors.londonO3Peak.value.toFixed(1)} µg/m³`;
+          const caseIndex = id === "nyc2023" ? "01" : "02";
+          const caseMode = id === "nyc2023" ? "Smoke event" : "Heat event";
           return <button key={id} className={`case-card case-${id} ${state.selectedCase === id ? "selected" : ""}`} onClick={() => selectCase(id)}>
-            <span className="case-place">{meta.place}</span>
-            <h3>{item.title}</h3><p>{item.subtitle}</p><p className="event-context">{EVENT_CONTEXT[id]}</p>
-            <div className="case-peak"><strong>{itemPeak.value.toFixed(1)}</strong><span>µg/m³<br />peak hourly PM₂.₅</span></div>
+            <div className="case-card-top"><span className="case-place">{meta.place}</span><span className="case-index">{caseIndex}</span></div>
+            <div className="case-card-title"><h3>{item.title}</h3><p>{item.subtitle}</p></div>
+            <p className="event-context">{EVENT_CONTEXT[id]}</p>
+            <div className="case-peak-row">
+              <div className="case-peak"><strong>{itemPeak.value.toFixed(1)}</strong><span>µg/m³<br />peak hourly PM₂.₅</span></div>
+              <div className="case-mode"><span>{caseMode}</span><b>{id === "nyc2023" ? "Boundary PM" : "Thermal stress"}</b></div>
+            </div>
             <div className="case-card-meta"><span><b>{(itemPeak.value / PM25_24H_GUIDELINE).toFixed(id === "nyc2023" ? 0 : 1)}×</b> WHO 24 h line</span><span><b>{anchorSummary}</b> measured anchor</span></div>
             <div className="case-tags"><span className="tiny-tag">{item.site.split(" · ")[0]}</span><span className="tiny-tag">{meta.coordinate}</span></div>
           </button>;
@@ -193,23 +324,38 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
             </label>
           </div>
           <aside className="case-context-panel">
-            <CaseRouteMap id={state.selectedCase} />
+            <div className="case-map-card">
+              <CaseRouteMap id={state.selectedCase} focus={mapFocus} />
+              <div className="map-focus-controls" aria-label="GIS focus controls">
+                {(["source", "plume", "site"] as MapFocus[]).map((item) => <button type="button" key={item} className={mapFocus === item ? "active" : ""} onClick={() => setMapFocus(item)}>{selectedFocusLabels[item]}</button>)}
+              </div>
+            </div>
             <div className="case-context-copy">
-              <div className="case-context-heading"><span>{selectedMeta.sourceRegion}</span><Provenance type="illustrative">Schematic GIS context</Provenance></div>
-              <p>{selectedMeta.transport}</p>
-              <dl>
-                <div><dt>Monitoring site</dt><dd>{selected.site}</dd></div>
-                <div><dt>Reference line</dt><dd>WHO 2021 PM₂.₅ 24 h guideline: {PM25_24H_GUIDELINE} µg/m³; used here as context, not an hourly compliance test.</dd></div>
-                <div><dt>Experiment cue</dt><dd>{selectedMeta.operationalCue}</dd></div>
-              </dl>
+              <div className="case-context-heading"><span>{selectedMeta.sourceRegion}</span><Provenance type="illustrative">GIS evidence briefing</Provenance></div>
+              <p><b>{selectedFocusLabels[mapFocus]} focus.</b> {MAP_FOCUS_COPY[state.selectedCase][mapFocus]}</p>
+              <div className="case-evidence-grid">
+                {selectedEvidence.map((item) => <article key={item.label}><span>{item.label}</span><b>{item.title}</b><small>{item.detail}</small></article>)}
+              </div>
+              <div className="experiment-cue"><span>Experiment cue</span><b>{selectedMeta.operationalCue}</b></div>
+              <div className="context-workflow">
+                <span>Measured event</span>
+                <i />
+                <span>CAVE boundary</span>
+                <i />
+                <span>Indoor protection</span>
+              </div>
             </div>
           </aside>
         </div>
-        <div className="metric-band challenge-metrics">
-          <div className="metric"><label>Peak event</label><strong className="smoke">{selectedPeak.value.toFixed(1)} µg/m³</strong></div>
-          <div className="metric"><label>Peak timestamp</label><strong>{formatTimestamp(selected.timestamps[selectedPeak.index])}</strong></div>
-          <div className="metric"><label>Guideline multiple</label><strong>{selectedMultiple.toFixed(state.selectedCase === "nyc2023" ? 0 : 1)}×</strong></div>
-        </div>
+        {isLondonCase ? <div className="metric-band challenge-metrics challenge-metrics-heat">
+          <div className="metric metric-peak metric-heat"><label>Heat driver</label><strong>40.3<small>°C</small></strong><span>UK record heatwave</span></div>
+          <div className="metric"><label>PM₂.₅ peak</label><strong>{selectedPeak.value.toFixed(1)}<small>µg/m³</small></strong><span>{formatTimestamp(selected.timestamps[selectedPeak.index])}</span></div>
+          <div className="metric"><label>O₃ co-exposure</label><strong>{anchors.londonO3Peak.value.toFixed(1)}<small>µg/m³</small></strong><span>measured ozone anchor</span></div>
+        </div> : <div className="metric-band challenge-metrics">
+          <div className="metric metric-peak"><label>Peak event</label><strong className="smoke">{selectedPeak.value.toFixed(1)}<small>µg/m³</small></strong><span>peak hourly PM₂.₅</span></div>
+          <div className="metric"><label>Peak timestamp</label><strong>{formatTimestamp(selected.timestamps[selectedPeak.index])}</strong><span>local measurement time</span></div>
+          <div className="metric"><label>Guideline multiple</label><strong>{selectedMultiple.toFixed(0)}×</strong><span>relative to WHO 24 h line</span></div>
+        </div>}
       </Panel>
     </div>
   </div></main>;
