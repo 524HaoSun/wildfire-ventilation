@@ -2833,6 +2833,39 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   .boot-hero-photo{min-height:0}
 }
 
+@media(max-width:1500px){
+  .boot-page{
+    background:
+      linear-gradient(90deg, rgba(233,238,235,.98) 0%, rgba(248,250,247,.97) 54.2%, rgba(231,236,232,.92) 54.2%, rgba(238,241,238,.98) 100%),
+      linear-gradient(rgba(233,238,235,.96), rgba(233,238,235,.96)),
+      url('./assets/cave-paper-texture_e84d28b0.png') center / 900px;
+  }
+  .boot-page:after{
+    background:
+      linear-gradient(90deg, transparent 0 53.8%, rgba(32,60,52,.18) 53.8% calc(53.8% + 1px), transparent calc(53.8% + 1px)),
+      linear-gradient(180deg, rgba(255,255,255,.28), transparent 18%, transparent 80%, rgba(32,60,52,.04));
+  }
+  .boot-layout .entry-copy h1{
+    max-width:min(560px, calc(100% - 48px));
+  }
+  .boot-hero-photo{
+    clip-path:inset(0);
+    contain:paint;
+  }
+}
+
+@media(max-width:1320px){
+  .boot-layout .entry-copy h1{
+    max-width:min(520px, calc(100% - 40px));
+  }
+  .boot-layout .entry-copy h1 span{
+    font-size:clamp(33px,2.62vw,38px);
+  }
+  .boot-layout .entry-copy h1 em{
+    font-size:clamp(30px,2.38vw,34px);
+  }
+}
+
 @media(max-width:900px){
   .entry-page{overflow:auto}
   .entry-header{height:auto;min-height:76px;padding:18px 22px;align-items:flex-start;gap:14px;flex-direction:column}
