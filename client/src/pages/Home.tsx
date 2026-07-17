@@ -11,6 +11,8 @@ import caveHero3dUrl from "@/assets/cave-hero-3d-v2.webp";
 import caveMarkUrl from "@/assets/cave-mark_84921330.png";
 import gisLondonBasemapUrl from "@/assets/gis-london-basemap.png";
 import gisNewYorkBasemapUrl from "@/assets/gis-new-york-basemap.png";
+import forecastWarningUrl from "@/assets/forecast-warning-system-v1.png";
+import worldMapUrl from "@/assets/world-map-real.svg";
 import {
   CASES,
   DEFAULT_EXPERIMENT_STATE,
@@ -31,7 +33,7 @@ import {
   type SelectedCase,
 } from "@/engine";
 
-const STEPS = ["Challenge", "Design", "Run", "Analyse"];
+const STEPS = ["Challenge", "Design", "Run", "Analyse", "Forecast"];
 const TARGET_WINDOW_HOURS = 24;
 const PM25_24H_GUIDELINE = 15;
 const EVENT_CONTEXT: Record<SelectedCase, string> = {
@@ -108,6 +110,29 @@ const ANALYSIS_CHAPTERS = [
   { label: "Fit", note: "The shared cursor now tests the reconstructed indoor response." },
   { label: "Dose", note: "Cumulative exposure becomes the primary evidence field." },
   { label: "Decide", note: "Operational guidance links thresholds, phases and strategy evidence." },
+] as const;
+const FORECAST_ALERTS = [
+  { city: "Vancouver", eta: "6 h", distance: "180 km", level: "Watch", confidence: "High", action: "Watch", trigger: "Stage closure crews and check filtration before the near-field plume arrives.", lon: -123.12, lat: 49.28 },
+  { city: "New York", eta: "22 h", distance: "720 km", level: "Prepare", confidence: "Moderate", action: "Prepare", trigger: "Close windows before T-6 h, then run mechanical + HEPA during the smoke window.", lon: -73.95, lat: 40.73 },
+  { city: "London", eta: "36 h", distance: "1,140 km", level: "Advisory", confidence: "Low", action: "Monitor", trigger: "Keep advisory status active; refresh plume track before issuing occupant actions.", lon: -0.13, lat: 51.52 },
+  { city: "Athens", eta: "9 h", distance: "260 km", level: "Act", confidence: "High", action: "Act", trigger: "Move to protected indoor mode now; outdoor smoke influence is within the action window.", lon: 23.73, lat: 37.98 },
+  { city: "Sydney", eta: "18 h", distance: "510 km", level: "Prepare", confidence: "Moderate", action: "Prepare", trigger: "Pre-position clean-air rooms and switch sensitive buildings before T-6 h.", lon: 151.21, lat: -33.87 },
+] as const;
+const FORECAST_FIRE_CLUSTERS = [
+  { lon: -124, lat: 56, size: 18 }, { lon: -116, lat: 53, size: 15 }, { lon: -106, lat: 51, size: 13 },
+  { lon: -72, lat: -11, size: 12 }, { lon: 18, lat: 43, size: 12 }, { lon: 32, lat: 38, size: 14 },
+  { lon: 103, lat: 58, size: 19 }, { lon: 116, lat: 51, size: 16 }, { lon: 76, lat: 24, size: 12 },
+  { lon: 137, lat: -25, size: 18 }, { lon: 148, lat: -34, size: 16 },
+] as const;
+const forecastPoint = (lon: number, lat: number) => ({
+  x: ((lon + 180) / 360) * 1000,
+  y: ((90 - lat) / 180) * 560,
+});
+const FORECAST_ACTIONS = [
+  { time: "Now", title: "Track plume approach", detail: "Watch fire clusters, wind corridor and receptor PM trend.", state: "Situational awareness" },
+  { time: "T-18 h", title: "Prepare protected mode", detail: "Check filters, close non-essential openings and brief occupants.", state: "Readiness notice" },
+  { time: "T-6 h", title: "Issue close-window alert", detail: "Send action warning before the smoke influence reaches the receptor.", state: "Public action window" },
+  { time: "Peak", title: "Hold indoor protection", detail: "Keep windows shut and maintain filtration until the plume passes.", state: "Exposure minimisation" },
 ] as const;
 
 function fixedDayWindow(startIdx: number, length: number) {
@@ -587,6 +612,135 @@ function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setShare
   </main>;
 }
 
+function ForecastScreen() {
+  const [selectedCity, setSelectedCity] = useState("New York");
+  const [selectedActionIndex, setSelectedActionIndex] = useState(2);
+  const selected = FORECAST_ALERTS.find((alert) => alert.city === selectedCity) ?? FORECAST_ALERTS[1];
+  const selectedAction = FORECAST_ACTIONS[selectedActionIndex] ?? FORECAST_ACTIONS[2];
+  const alertPoints = FORECAST_ALERTS.map((alert) => ({ ...alert, ...forecastPoint(alert.lon, alert.lat) }));
+  const firePoints = FORECAST_FIRE_CLUSTERS.map((point) => ({ ...point, ...forecastPoint(point.lon, point.lat) }));
+  return <main className="screen forecast-screen" aria-label="Wildfire smoke forecast interface concept">
+    <div className="screen-grid grid-forecast">
+      <Panel className="forecast-map-panel" eyebrow="5. Anticipate" title="Wildfire smoke arrival forecast" action={<Provenance type="illustrative">Concept forecast layer</Provenance>}>
+        <div className="forecast-map-stage">
+          <div className="forecast-world-map" aria-label="Global wildfire and smoke approach map">
+            <img className="forecast-real-basemap" src={worldMapUrl} alt="" />
+            <svg viewBox="0 0 1000 560" role="img">
+              <title>Global wildfire smoke forecast concept map</title>
+              <defs>
+                <linearGradient id="forecastSmoke" x1="0" x2="1">
+                  <stop offset="0" stopColor="#b64d32" stopOpacity=".22" />
+                  <stop offset=".55" stopColor="#c28b48" stopOpacity=".34" />
+                  <stop offset="1" stopColor="#0f6c62" stopOpacity=".16" />
+                </linearGradient>
+                <filter id="forecastBlur" x="-20%" y="-30%" width="140%" height="160%">
+                  <feGaussianBlur stdDeviation="18" />
+                </filter>
+              </defs>
+              <g className="forecast-graticule">
+                {Array.from({ length: 9 }, (_, i) => <path key={`v-${i}`} d={`M${100 + i * 100} 62 V500`} />)}
+                {Array.from({ length: 5 }, (_, i) => <path key={`h-${i}`} d={`M70 ${112 + i * 82} H930`} />)}
+              </g>
+              <g className="forecast-ocean-bands">
+                <path d="M24 270 C144 236 232 244 330 274 C426 304 510 302 606 270 C720 232 842 238 976 294" />
+                <path d="M60 382 C214 344 320 366 430 416 C550 472 680 450 812 392 C890 358 936 372 966 414" />
+              </g>
+              <g className="forecast-wind-field">
+                <path d="M94 196 C186 162 264 168 336 204 C420 246 490 238 560 202" />
+                <path d="M118 340 C230 318 326 338 420 376 C516 414 626 402 716 360" />
+                <path d="M610 168 C690 142 764 154 842 196 C902 228 942 236 978 218" />
+                <path d="M658 420 C734 402 812 410 900 456" />
+              </g>
+              <g className="forecast-smoke-corridors">
+                <path className="smoke-veil north-atlantic" d="M158 106 C214 94 262 104 294 153 C356 134 426 118 500 120 C526 132 550 148 566 162" />
+                <path className="smoke-veil pacific" d="M786 100 C744 150 728 212 752 276 C772 326 842 348 920 386" />
+                <path className="smoke-core north-atlantic" d="M160 108 C216 102 260 116 294 153 C356 140 430 124 500 121 C528 134 550 149 566 162" />
+                <path className="smoke-core pacific" d="M786 104 C748 156 738 220 758 274 C784 326 850 352 920 386" />
+                <path className="eta-front" d="M242 126 C270 132 286 142 294 153" />
+                <path className="eta-front europe" d="M458 124 C478 120 492 120 500 121" />
+                <path className="eta-front pacific" d="M848 352 C884 364 906 376 920 386" />
+              </g>
+              <g className="forecast-eta-rings">
+                <circle cx="294" cy="153" r="30" />
+                <circle cx="294" cy="153" r="58" />
+                <circle cx="500" cy="121" r="42" />
+                <circle cx="920" cy="386" r="40" />
+              </g>
+              <g className="forecast-time-gates">
+                <path d="M294 84 V226" />
+                <path d="M500 68 V190" />
+                <path d="M920 330 V444" />
+                <text x="304" y="86">T-22h receptor watch</text>
+                <text x="510" y="70">T-36h advisory</text>
+                <text x="782" y="334">T-18h Pacific alert</text>
+              </g>
+              <g className="forecast-fire-clusters">
+                {firePoints.map((point, index) => <g key={index} className={`fire-cluster fire-${index % 3}`} transform={`translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`}><circle className="fire-halo" r={point.size} /><circle className="fire-dot" r={Math.max(5, point.size * .34)} /></g>)}
+              </g>
+              <g className="forecast-receptors">
+                {alertPoints.map((alert) => <g key={alert.city} role="button" tabIndex={0} onClick={() => setSelectedCity(alert.city)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedCity(alert.city); }} transform={`translate(${alert.x.toFixed(1)} ${alert.y.toFixed(1)})`} className={alert.city === selected.city ? "selected" : ""}>
+                  <circle r="10" />
+                  <text x="16" y="-8">{alert.city}</text>
+                  <text x="16" y="10">{alert.eta} · {alert.level}</text>
+                </g>)}
+              </g>
+            </svg>
+            <div className="forecast-map-caption">
+              <span>NASA FIRMS-ready fire layer</span>
+              <span>Wind corridor + smoke plume ETA</span>
+              <span>Urban receptor decision point</span>
+            </div>
+          </div>
+        </div>
+      </Panel>
+      <Panel className="forecast-command-panel" eyebrow="Arrival intelligence" title="Smoke is approaching the receptor">
+        <div className="forecast-command-body">
+          <div className="forecast-arrival-card">
+            <span>Selected receptor</span>
+            <h3>{selected.city}</h3>
+            <div className="arrival-number">{selected.eta.replace(" h", "")}<small>h</small></div>
+            <p>Estimated smoke influence window before outdoor PM₂.₅ begins to rise at the receptor.</p>
+          </div>
+          <div className="forecast-kpis">
+            <article><span>Smoke distance</span><b>{selected.distance}</b><small>along modelled wind corridor</small></article>
+            <article><span>Confidence</span><b>{selected.confidence}</b><small>fire + wind agreement</small></article>
+            <article><span>Action state</span><b>{selected.action}</b><small>{selectedAction.state}</small></article>
+          </div>
+          <div className="forecast-threshold">
+            <span>Recommended trigger</span>
+            <b>{selected.trigger}</b>
+          </div>
+          <div className="forecast-receptor-picker" aria-label="Select forecast receptor">
+            {FORECAST_ALERTS.map((alert) => <button type="button" key={alert.city} className={alert.city === selected.city ? "active" : ""} onClick={() => setSelectedCity(alert.city)}><span>{alert.city}</span><b>{alert.eta}</b><small>{alert.level}</small></button>)}
+          </div>
+          <div className="forecast-handoff-visual">
+            <img src={forecastWarningUrl} alt="" />
+            <div className="handoff-overlay">
+              <span>Early warning layer</span>
+              <b>Global fire signals become local protective action windows.</b>
+            </div>
+          </div>
+        </div>
+      </Panel>
+      <Panel className="forecast-timeline-panel" eyebrow="Operational timeline" title="Before the smoke arrives">
+        <div className="forecast-action-timeline">
+          {FORECAST_ACTIONS.map((item, index) => <article key={item.time} role="button" tabIndex={0} onClick={() => setSelectedActionIndex(index)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedActionIndex(index); }} className={index === selectedActionIndex ? "active" : ""}>
+            <span>{item.time}</span>
+            <div><h3>{item.title}</h3><p>{item.detail}</p><small>{item.state}</small></div>
+          </article>)}
+        </div>
+      </Panel>
+      <Panel className="forecast-evidence-panel" eyebrow="Interactive output" title={`${selected.city} · ${selectedAction.time} action`}>
+        <div className="forecast-alert-output">
+          <article><span>Alert message</span><b>{selectedAction.title}</b><p>{selectedAction.detail}</p></article>
+          <article><span>ETA state</span><b>{selected.eta} · {selected.level}</b><p>{selected.distance} from receptor along the modelled smoke corridor.</p></article>
+          <article><span>Decision point</span><b>{selected.action}</b><p>{selected.trigger}</p></article>
+        </div>
+      </Panel>
+    </div>
+  </main>;
+}
+
 function SmokePlumeCanvas() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -743,7 +897,7 @@ export default function Home() {
   const [entered, setEntered] = useState(() => new URLSearchParams(window.location.search).has("screen"));
   const [screen, setScreen] = useState(() => {
     const requested = Number(new URLSearchParams(window.location.search).get("screen"));
-    return requested >= 1 && requested <= 4 ? requested : 1;
+    return requested >= 1 && requested <= 5 ? requested : 1;
   });
   const [state, setState] = useState<ExperimentState>(() => {
     try {
@@ -798,8 +952,8 @@ export default function Home() {
     const onKey = (event: KeyboardEvent) => {
       if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) return;
       if (entered && event.key === "Escape") setEntered(false);
-      if (/^[1-4]$/.test(event.key)) { setEntered(true); setScreen(+event.key); }
-      if (entered && event.key === "ArrowRight") setScreen((value) => Math.min(4, value + 1));
+      if (/^[1-5]$/.test(event.key)) { setEntered(true); setScreen(+event.key); }
+      if (entered && event.key === "ArrowRight") setScreen((value) => Math.min(5, value + 1));
       if (entered && event.key === "ArrowLeft") setScreen((value) => Math.max(1, value - 1));
     };
     window.addEventListener("keydown", onKey); return () => window.removeEventListener("keydown", onKey);
@@ -808,7 +962,7 @@ export default function Home() {
   const windowValues = useMemo(() => dataset.pm25.slice(state.targetWindow.startIdx, state.targetWindow.endIdx + 1), [dataset, state.targetWindow]);
   const simulation = useMemo(() => simulateMassBalance(windowValues, state), [state, windowValues]);
   useEffect(() => { setSharedMinute((value) => Math.max(0, Math.min(value, simulation.indoorMinute.length - 1))); }, [simulation.indoorMinute.length]);
-  const advance = useCallback(() => setScreen((value) => Math.min(4, value + 1)), []);
+  const advance = useCallback(() => setScreen((value) => Math.min(5, value + 1)), []);
   const sharedTimestampIndex = Math.min(state.targetWindow.endIdx, state.targetWindow.startIdx + Math.floor(sharedMinute / 60));
   return <div className="experience-shell"><div className="experience-stage">
     {!entered ? <EnteringPage onEnter={() => setEntered(true)} /> : <div className="workbench">
@@ -817,11 +971,12 @@ export default function Home() {
       <nav className="lifecycle" aria-label="Experiment lifecycle">{STEPS.map((label, index) => <div key={label} className={`life-step ${screen === index + 1 ? "active" : ""} ${screen > index + 1 ? "done" : ""}`}><button className="life-button" onClick={() => setScreen(index + 1)}><span className="life-index">{screen > index + 1 ? "✓" : String(index + 1).padStart(2, "0")}</span>{label}</button></div>)}</nav>
       <div className="atlas-edition"><span>UCL CAVE</span><strong>Research demo · 2026</strong></div>
     </header>
-    <div className="status-strip"><span><i>Case</i>{dataset.title}</span><span><i>Shared context</i>{formatTimestamp(dataset.timestamps[sharedTimestampIndex])} · {selectedSensor}</span><span><i>Modelled air change</i>{simulation.params.totalAch.toFixed(2)} h⁻¹</span>{screen === 4 && <span className="analysis-status"><i>{ANALYSIS_CHAPTERS[analysisChapter].label}</i><b>{ANALYSIS_CHAPTERS[analysisChapter].note}</b></span>}{simulation.gapFilled && <span className="gap-note">Interpolated evidence gap</span>}</div>
+    <div className="status-strip"><span><i>Case</i>{dataset.title}</span><span><i>Shared context</i>{formatTimestamp(dataset.timestamps[sharedTimestampIndex])} · {selectedSensor}</span><span><i>Modelled air change</i>{simulation.params.totalAch.toFixed(2)} h⁻¹</span>{screen === 4 && <span className="analysis-status"><i>{ANALYSIS_CHAPTERS[analysisChapter].label}</i><b>{ANALYSIS_CHAPTERS[analysisChapter].note}</b></span>}{screen === 5 && <span className="analysis-status"><i>Forecast</i><b>Global fire signals become smoke-arrival actions before local exposure.</b></span>}{simulation.gapFilled && <span className="gap-note">Interpolated evidence gap</span>}</div>
     {screen === 1 && <ChallengeScreen state={state} setState={setState} sharedMinute={sharedMinute} setSharedMinute={setSharedMinute} onAdvance={advance} />}
     {screen === 2 && <DesignScreen state={state} setState={setState} simulation={simulation} selectedSensor={selectedSensor} setSelectedSensor={setSelectedSensor} onAdvance={advance} />}
     {screen === 3 && <RunScreen state={state} setState={setState} simulation={simulation} minute={sharedMinute} setMinute={setSharedMinute} selectedSensor={selectedSensor} setSelectedSensor={setSelectedSensor} />}
     {screen === 4 && <AnalyseScreen state={state} simulation={simulation} windowValues={windowValues} sharedMinute={sharedMinute} setSharedMinute={setSharedMinute} selectedSensor={selectedSensor} guidanceRules={guidanceRules} setGuidanceRules={setGuidanceRules} lockedStrategy={lockedStrategy} setLockedStrategy={setLockedStrategy} decisionNote={decisionNote} setDecisionNote={setDecisionNote} analysisChapter={analysisChapter} setAnalysisChapter={setAnalysisChapter} />}
+    {screen === 5 && <ForecastScreen />}
   </div>}
   </div></div>;
 }
