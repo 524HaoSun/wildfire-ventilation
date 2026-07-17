@@ -4299,16 +4299,7 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   box-shadow:inset 4px 0 0 rgba(15,116,107,.28);
 }
 .run-brief-card:after{
-  content:"";
-  position:absolute;
-  inset:auto 50% 10px auto;
-  width:58px;
-  height:24px;
-  transform:translateX(50%);
-  border-top:1px solid rgba(15,116,107,.22);
-  border-left:1px solid rgba(15,116,107,.22);
-  border-right:1px solid rgba(15,116,107,.22);
-  pointer-events:none;
+  display:none;
 }
 .run-brief-card span{
   color:#536962;
