@@ -411,11 +411,106 @@ function AnalyseScreen({ state, simulation, windowValues, sharedMinute, setShare
   </main>;
 }
 
+function SmokePlumeCanvas() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const context = canvas.getContext("2d");
+    if (!context) return;
+
+    const puffs = Array.from({ length: 52 }, (_, index) => {
+      const seed = Math.sin(index * 91.73) * 10000;
+      const unit = seed - Math.floor(seed);
+      const seed2 = Math.sin(index * 43.17 + 8.2) * 10000;
+      const unit2 = seed2 - Math.floor(seed2);
+      return {
+        offset: unit,
+        drift: unit2,
+        speed: 0.04 + unit * 0.035,
+        size: 0.032 + unit2 * 0.044,
+        lift: 0.34 + unit * 0.22,
+        spread: 0.26 + unit2 * 0.16,
+        wobble: 0.025 + unit * 0.035,
+      };
+    });
+
+    let animationFrame = 0;
+    let width = 0;
+    let height = 0;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motionScale = reducedMotion ? 0.45 : 1;
+
+    const resize = () => {
+      const rect = canvas.getBoundingClientRect();
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const pixelWidth = Math.max(1, Math.floor(rect.width * dpr));
+      const pixelHeight = Math.max(1, Math.floor(rect.height * dpr));
+      if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+        canvas.width = pixelWidth;
+        canvas.height = pixelHeight;
+      }
+      context.setTransform(dpr, 0, 0, dpr, 0, 0);
+      width = rect.width;
+      height = rect.height;
+    };
+
+    const drawPuff = (x: number, y: number, radius: number, alpha: number, stretch: number, rotation: number) => {
+      context.save();
+      context.translate(x, y);
+      context.rotate(rotation);
+      context.scale(stretch, 0.74 + stretch * 0.18);
+      const gradient = context.createRadialGradient(0, 0, radius * 0.08, 0, 0, radius);
+      gradient.addColorStop(0, `rgba(183, 174, 154, ${alpha * 0.62})`);
+      gradient.addColorStop(0.34, `rgba(132, 120, 101, ${alpha * 0.48})`);
+      gradient.addColorStop(0.66, `rgba(80, 73, 65, ${alpha * 0.26})`);
+      gradient.addColorStop(1, "rgba(76, 70, 62, 0)");
+      context.fillStyle = gradient;
+      context.beginPath();
+      context.arc(0, 0, radius, 0, Math.PI * 2);
+      context.fill();
+      context.restore();
+    };
+
+    const render = (time: number) => {
+      resize();
+      context.clearRect(0, 0, width, height);
+      context.globalCompositeOperation = "source-over";
+
+      const seconds = time / 1000 * motionScale;
+      for (let index = 0; index < puffs.length; index += 1) {
+        const puff = puffs[index];
+        const progress = (seconds * puff.speed + puff.offset) % 1;
+        const ease = 1 - Math.pow(1 - progress, 2.1);
+        const sourceX = width * (0.13 + puff.drift * 0.035);
+        const sourceY = height * (0.76 + puff.offset * 0.08);
+        const x = sourceX + width * puff.spread * ease + Math.sin(seconds * 1.2 + index) * width * puff.wobble;
+        const y = sourceY - height * puff.lift * ease + Math.sin(seconds * 0.9 + index * 0.6) * height * puff.wobble;
+        const radius = width * (puff.size + ease * 0.055);
+        const fadeIn = Math.min(progress / 0.22, 1);
+        const fadeOut = Math.min((1 - progress) / 0.26, 1);
+        const alpha = 0.15 * fadeIn * fadeOut * (0.72 + puff.drift * 0.34);
+        const stretch = 1.05 + ease * 0.62 + puff.drift * 0.34;
+        drawPuff(x, y, radius, alpha, stretch, -0.34 + ease * -0.28 + puff.drift * 0.18);
+      }
+
+      drawPuff(width * 0.15, height * 0.78, width * 0.1, 0.12, 1.22, -0.16);
+      animationFrame = window.requestAnimationFrame(render);
+    };
+
+    animationFrame = window.requestAnimationFrame(render);
+    return () => window.cancelAnimationFrame(animationFrame);
+  }, []);
+
+  return <canvas className="boot-smoke-canvas" ref={canvasRef} aria-hidden="true" />;
+}
+
 function BootHeroVisual() {
   return <figure className="boot-hero boot-hero-photo" aria-label="3D view of the UCL CAVE controlled-environment chamber with an instrumented test volume">
     <img className="boot-hero-image" src={caveHero3dUrl} alt="UCL CAVE controlled-environment chamber with a test volume, wildfire-smoke plume, sensors, HVAC services and mitigation equipment" />
     <div className="boot-hero-vignette" aria-hidden="true" />
-    <div className="boot-chamber-smoke" aria-hidden="true"><i /><i /><i /></div>
+    <div className="boot-chamber-smoke" aria-hidden="true"><SmokePlumeCanvas /></div>
   </figure>;
 }
 
