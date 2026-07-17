@@ -23,6 +23,9 @@ interface ScientificChartProps {
   onPointSelect?: (index: number) => void;
   compact?: boolean;
   showLegend?: boolean;
+  showReadout?: boolean;
+  pad?: Partial<typeof PAD>;
+  bands?: Array<{ start: number; end: number; label?: string; color?: string; active?: boolean }>;
 }
 
 const PAD = { left: 56, right: 18, top: 20, bottom: 38 };
@@ -55,6 +58,9 @@ export function ScientificChart({
   onPointSelect,
   compact = false,
   showLegend = true,
+  showReadout = true,
+  pad,
+  bands = [],
 }: ScientificChartProps) {
   const id = useId();
   const frameRef = useRef<HTMLDivElement>(null);
@@ -78,7 +84,7 @@ export function ScientificChart({
   const finiteMax = Math.max(yMin + 1, ...finite);
   const yMax = Math.max(yMin + 1, maxY ?? finiteMax * 1.08);
   const ySpan = yMax - yMin;
-  const chartPad = compact ? { left: 8, right: 8, top: 8, bottom: 8 } : PAD;
+  const chartPad = compact ? { left: 8, right: 8, top: 8, bottom: 8 } : { ...PAD, ...pad };
   const innerWidth = width - chartPad.left - chartPad.right;
   const innerHeight = height - chartPad.top - chartPad.bottom;
   const x = (index: number) => chartPad.left + (index / (length - 1)) * innerWidth;
@@ -118,6 +124,21 @@ export function ScientificChart({
           </pattern>
         </defs>
         {!compact && <rect x={chartPad.left} y={chartPad.top} width={innerWidth} height={innerHeight} fill={`url(#${id}-grid)`} />}
+        {!compact && bands.map((band) => (
+          <g key={`${band.start}-${band.end}-${band.label ?? ""}`}>
+            <rect
+              x={x(Math.max(0, Math.min(length - 1, band.start)))}
+              y={chartPad.top}
+              width={Math.max(1, x(Math.max(0, Math.min(length - 1, band.end))) - x(Math.max(0, Math.min(length - 1, band.start))))}
+              height={innerHeight}
+              fill={band.color ?? "#0f6c62"}
+              opacity={band.active ? "0.14" : "0.055"}
+            />
+            {band.active && band.label && (
+              <text x={x(Math.max(0, Math.min(length - 1, band.start))) + 8} y={chartPad.top + 13} className="axis-text phase-band-label">{band.label}</text>
+            )}
+          </g>
+        ))}
         {range && (
           <rect
             x={x(range.start)}
@@ -147,7 +168,7 @@ export function ScientificChart({
         {!compact && yLabel && <text x="16" y={height / 2} transform={`rotate(-90 16 ${height / 2})`} textAnchor="middle" className="axis-label">{yLabel}</text>}
         {!compact && xLabel && <text x={width - chartPad.right} y={chartPad.top + 11} textAnchor="end" className="axis-label">{xLabel}</text>}
       </svg>
-      {active != null && !compact && (
+      {active != null && !compact && showReadout && (
         <div className="chart-readout">
           <span>{xLabels?.[active] ?? `Index ${active}`}</span>
           {series.map((item, index) => <b key={item.label} style={{ color: item.color }}>{item.label} {activeValues[index] == null ? "—" : Number(activeValues[index]).toFixed(1)}</b>)}
