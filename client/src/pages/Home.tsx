@@ -296,7 +296,7 @@ function ChallengeScreen({ state, setState, sharedMinute, setSharedMinute, onAdv
         })}
       </div>
     </Panel>
-    <div style={{ display: "grid", gap: 10, minWidth: 0 }}>
+    <div className="challenge-main-stack">
       <Panel className={`event-explorer event-${state.selectedCase}`} eyebrow="Event explorer" title={selected.title} action={<div className="button-row"><Provenance type="measured">Measured · {selected.sourceLabel}</Provenance><button className="primary-button" onClick={onAdvance}>Design experiment <ArrowRight size={13} /></button></div>}>
         <div className="panel-body">
           <ScientificChart

@@ -3108,3 +3108,411 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   .case-card-meta span{padding:7px 8px;font-size:10px!important}
   .case-tags .tiny-tag{font-size:9px!important}
 }
+
+/* Final layout repair: remove clipping/overlap introduced by earlier compact rules. */
+.entry-page.boot-page{
+  background:
+    linear-gradient(90deg, rgba(233,238,235,.98) 0%, rgba(248,250,247,.97) 47.2%, rgba(231,236,232,.92) 47.2%, rgba(238,241,238,.98) 100%),
+    linear-gradient(rgba(233,238,235,.96), rgba(233,238,235,.96)),
+    url('./assets/cave-paper-texture_e84d28b0.png') center / 900px;
+}
+.entry-page.boot-page:after{
+  background:
+    linear-gradient(90deg, transparent 0 47.2%, rgba(32,60,52,.18) 47.2% calc(47.2% + 1px), transparent calc(47.2% + 1px)),
+    linear-gradient(180deg, rgba(255,255,255,.28), transparent 18%, transparent 80%, rgba(32,60,52,.04));
+}
+.entry-page .boot-layout{
+  grid-template-columns:minmax(0,47.2%) minmax(0,52.8%)!important;
+  overflow:hidden;
+}
+.entry-page .boot-layout .entry-copy{
+  padding-left:clamp(38px,3.4vw,70px);
+  padding-right:32px;
+  overflow:visible;
+}
+.entry-page .boot-layout .entry-copy h1{
+  width:min(900px,calc(100% - 24px));
+  max-width:none!important;
+  overflow:visible!important;
+}
+.entry-page .boot-layout .entry-copy h1 span{
+  width:auto;
+  max-width:none;
+  white-space:nowrap;
+  font-size:clamp(42px,2.58vw,54px);
+  line-height:1.08;
+}
+.entry-page .boot-layout .entry-copy h1 em{
+  white-space:nowrap;
+  font-size:clamp(36px,2.24vw,47px);
+}
+.entry-page .boot-instrument{
+  padding:34px 28px 42px 16px;
+}
+.entry-page .boot-hero-photo{
+  width:100%;
+  height:100%;
+  overflow:hidden;
+  clip-path:inset(0);
+  contain:paint;
+}
+
+.challenge-main-stack{
+  display:grid;
+  grid-template-rows:minmax(0,1fr);
+  gap:0;
+  min-width:0;
+  min-height:0;
+  height:100%;
+}
+.screen-grid.grid-challenge{
+  grid-template-columns:minmax(360px,.25fr) minmax(0,1fr)!important;
+  gap:16px!important;
+}
+.grid-challenge>.panel,
+.challenge-main-stack>.panel,
+.event-explorer{
+  min-height:0;
+  height:100%;
+}
+.grid-challenge>.panel{
+  overflow:hidden;
+}
+.grid-challenge .case-list{
+  height:100%;
+  min-height:0;
+  display:grid!important;
+  grid-template-rows:repeat(2,minmax(0,1fr))!important;
+  gap:14px!important;
+  padding:16px!important;
+  overflow:hidden;
+}
+.grid-challenge .case-card{
+  min-height:0;
+  overflow:visible!important;
+  display:flex!important;
+  flex-direction:column;
+  justify-content:space-between!important;
+  gap:10px;
+  padding:16px 16px 14px!important;
+}
+.grid-challenge .case-card .event-context{
+  overflow:visible!important;
+  white-space:normal;
+  min-height:0!important;
+  padding:8px 10px;
+  font-size:11.5px!important;
+  line-height:1.28!important;
+}
+.case-card-title h3{
+  font-size:20px!important;
+  line-height:1.04!important;
+}
+.case-card-title p{
+  font-size:12.5px!important;
+  line-height:1.2!important;
+}
+.case-peak-row{
+  grid-template-columns:minmax(0,1.05fr) minmax(92px,.95fr);
+  gap:8px;
+}
+.case-peak-row .case-peak,
+.case-mode{
+  padding:10px;
+}
+.case-peak-row .case-peak strong{
+  font-size:36px!important;
+}
+.case-card-meta{
+  gap:7px!important;
+}
+.case-card-meta span{
+  padding:8px 9px!important;
+  font-size:10.5px!important;
+  line-height:1.2!important;
+}
+.case-tags .tiny-tag{
+  min-height:28px;
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  line-height:1.1!important;
+}
+
+.event-explorer{
+  display:flex!important;
+  flex-direction:column;
+  overflow:hidden!important;
+}
+.event-explorer>.panel-header{
+  flex:0 0 auto;
+  min-height:72px;
+}
+.event-explorer>.panel-body{
+  flex:1 1 auto;
+  min-height:0;
+  display:grid!important;
+  grid-template-rows:minmax(260px,.82fr) minmax(78px,auto) minmax(320px,1.18fr)!important;
+  gap:14px!important;
+  padding:16px 22px 0!important;
+  overflow:hidden!important;
+}
+.event-explorer>.panel-body>.scientific-chart{
+  min-height:0;
+  height:100%;
+  overflow:visible;
+}
+.event-explorer>.panel-body>.scientific-chart svg{
+  width:100%;
+  height:100%!important;
+  min-height:0!important;
+  max-height:none!important;
+}
+.event-explorer>.panel-body>.scientific-chart .chart-legend{
+  margin-bottom:8px;
+}
+.single-window-control{
+  min-height:0;
+  padding:12px 16px 10px!important;
+  overflow:visible;
+}
+.single-window-control label{
+  gap:9px;
+}
+.window-control-heading b{
+  font-size:20px;
+  line-height:1;
+}
+.window-control-heading strong{
+  font-size:14px;
+  white-space:nowrap;
+}
+.window-control-scale{
+  font-size:11px;
+  line-height:1.1;
+}
+.case-context-panel{
+  min-height:0!important;
+  height:100%;
+  grid-template-columns:minmax(460px,1.02fr) minmax(420px,.98fr)!important;
+  gap:14px!important;
+  padding:12px!important;
+  overflow:hidden;
+}
+.case-map-card{
+  min-height:0;
+  height:100%;
+  grid-template-rows:minmax(0,1fr) 36px;
+}
+.case-context-copy{
+  min-height:0;
+  height:100%;
+  grid-template-rows:auto auto minmax(92px,1fr) auto auto!important;
+  gap:9px!important;
+  overflow:visible;
+}
+.case-context-heading>span{
+  font-size:19px!important;
+  line-height:1.05!important;
+}
+.case-context-copy p{
+  font-size:13px!important;
+  line-height:1.32!important;
+}
+.case-evidence-grid{
+  min-height:0;
+  height:100%;
+  align-items:stretch;
+}
+.case-evidence-grid article{
+  min-height:0!important;
+  align-content:center;
+  padding:11px 12px!important;
+}
+.case-evidence-grid b{
+  font-size:13px!important;
+}
+.case-evidence-grid small{
+  font-size:10px!important;
+}
+.experiment-cue{
+  padding:9px 11px!important;
+}
+.experiment-cue b{
+  font-size:12px!important;
+  line-height:1.24!important;
+}
+.context-workflow{
+  min-height:34px!important;
+  padding:8px 10px!important;
+  font-size:10px!important;
+}
+.challenge-metrics{
+  position:static!important;
+  flex:0 0 92px;
+  min-height:92px;
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  border-top:1px solid rgba(32,60,52,.16);
+  background:#fbfcf9;
+}
+.challenge-metrics .metric{
+  min-height:0!important;
+  padding:12px 16px!important;
+  display:grid;
+  align-content:center;
+  text-align:center;
+}
+.challenge-metrics .metric strong{
+  font-size:28px!important;
+  line-height:1!important;
+}
+.challenge-metrics .metric-peak strong{
+  font-size:32px!important;
+}
+
+@media(max-width:1500px),(max-height:820px){
+  .entry-page.boot-page{
+    background:
+      linear-gradient(90deg, rgba(233,238,235,.98) 0%, rgba(248,250,247,.97) 53%, rgba(231,236,232,.92) 53%, rgba(238,241,238,.98) 100%),
+      linear-gradient(rgba(233,238,235,.96), rgba(233,238,235,.96)),
+      url('./assets/cave-paper-texture_e84d28b0.png') center / 900px;
+  }
+  .entry-page.boot-page:after{
+    background:
+      linear-gradient(90deg, transparent 0 53%, rgba(32,60,52,.18) 53% calc(53% + 1px), transparent calc(53% + 1px)),
+      linear-gradient(180deg, rgba(255,255,255,.28), transparent 18%, transparent 80%, rgba(32,60,52,.04));
+  }
+  .entry-page .boot-layout{
+    grid-template-columns:minmax(0,53%) minmax(0,47%)!important;
+  }
+  .entry-page .boot-layout .entry-copy h1{
+    width:min(620px,calc(100% - 24px));
+  }
+  .entry-page .boot-layout .entry-copy h1 span{
+    font-size:clamp(34px,2.72vw,40px);
+  }
+  .entry-page .boot-layout .entry-copy h1 em{
+    font-size:clamp(30px,2.34vw,34px);
+  }
+  .entry-page .boot-instrument{
+    padding:26px 18px 32px 8px;
+  }
+  .screen-grid.grid-challenge{
+    grid-template-columns:300px minmax(0,1fr)!important;
+    gap:10px!important;
+  }
+  .grid-challenge .case-list{
+    gap:10px!important;
+    padding:10px!important;
+  }
+  .grid-challenge .case-card{
+    gap:6px;
+    padding:10px 11px!important;
+  }
+  .case-card-title h3{font-size:16px!important}
+  .case-card-title p{font-size:10.5px!important}
+  .grid-challenge .case-card .event-context{
+    padding:6px 7px;
+    font-size:9.7px!important;
+    line-height:1.2!important;
+  }
+  .case-peak-row{
+    grid-template-columns:1fr;
+    gap:5px;
+  }
+  .case-mode{
+    display:none!important;
+  }
+  .case-peak-row .case-peak{
+    padding:7px 8px;
+  }
+  .case-peak-row .case-peak strong{
+    font-size:28px!important;
+  }
+  .case-peak-row .case-peak span,
+  .case-card-meta span,
+  .case-tags .tiny-tag{
+    font-size:8.8px!important;
+  }
+  .case-card-meta{gap:5px!important}
+  .case-card-meta span{padding:6px!important}
+  .case-tags{gap:5px!important}
+  .case-tags .tiny-tag{min-height:22px}
+  .event-explorer>.panel-header{
+    min-height:58px;
+  }
+  .event-explorer>.panel-body{
+    grid-template-rows:minmax(150px,.76fr) minmax(62px,auto) minmax(182px,1fr)!important;
+    gap:8px!important;
+    padding:9px 12px 0!important;
+  }
+  .single-window-control{
+    padding:8px 10px 7px!important;
+  }
+  .window-control-heading b{font-size:15px}
+  .window-control-heading strong{font-size:10.5px}
+  .window-control-scale{font-size:8.5px}
+  .case-context-panel{
+    grid-template-columns:minmax(300px,.9fr) minmax(330px,1.1fr)!important;
+    padding:8px!important;
+    gap:8px!important;
+  }
+  .case-map-card{
+    grid-template-rows:minmax(0,1fr) 30px;
+  }
+  .map-chip{
+    min-height:20px;
+    padding:4px 6px;
+    font-size:8.5px;
+  }
+  .map-readout-card,
+  .map-replay-card{
+    padding:7px 8px;
+    min-width:112px;
+  }
+  .map-readout-card b{
+    font-size:21px;
+  }
+  .map-replay-card{
+    min-width:132px;
+    bottom:36px;
+  }
+  .map-side-scale{
+    display:none;
+  }
+  .case-context-copy{
+    grid-template-rows:auto auto minmax(64px,1fr) auto!important;
+    gap:6px!important;
+  }
+  .case-context-heading>span{font-size:15px!important}
+  .case-context-copy p{font-size:10.2px!important;line-height:1.24!important}
+  .case-evidence-grid{gap:5px}
+  .case-evidence-grid article{padding:6px 7px!important}
+  .case-evidence-grid span,
+  .experiment-cue span{font-size:8px!important}
+  .case-evidence-grid b{font-size:9.5px!important}
+  .case-evidence-grid small{font-size:8px!important}
+  .experiment-cue{
+    grid-template-columns:72px minmax(0,1fr);
+    padding:6px 7px!important;
+  }
+  .experiment-cue b{font-size:9px!important}
+  .context-workflow{display:none!important}
+  .challenge-metrics{
+    flex-basis:70px;
+    min-height:70px;
+  }
+  .challenge-metrics .metric{
+    padding:8px 10px!important;
+  }
+  .challenge-metrics .metric label,
+  .challenge-metrics .metric>span{
+    font-size:8.8px!important;
+    line-height:1.15!important;
+  }
+  .challenge-metrics .metric strong,
+  .challenge-metrics .metric-peak strong{
+    font-size:22px!important;
+  }
+}
