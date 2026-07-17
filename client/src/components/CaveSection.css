@@ -1,2 +1,278 @@
-/* Editorial research atlas: every SVG annotation and legend uses Times New Roman with precise scientific spacing. */
-.cave-section-wrap{height:100%;min-height:0;display:grid;grid-template-rows:minmax(0,1fr) 34px 28px;background:#e9ede8;overflow:hidden}.cave-section{width:100%;height:100%;min-height:0;display:block}.cave-small-label,.cave-note,.sensor-id,.sensor-value{font-family:"Times New Roman",Times,serif;fill:#32423f}.cave-small-label{font-size:11px;font-weight:700;letter-spacing:.05em}.cave-zone-label{font-family:"Times New Roman",Times,serif;font-size:13px;font-weight:700;fill:#171b1b;letter-spacing:.02em}.cave-note{font-size:10px;letter-spacing:.03em}.cave-hall-panels rect{fill:rgba(255,255,255,.12);stroke:rgba(23,27,27,.12);stroke-width:1}.cave-hall-panels path{fill:none;stroke:rgba(23,27,27,.12);stroke-width:1}.cave-ceiling-services rect{fill:#737f7a;stroke:#171b1b;stroke-width:1.1}.cave-ceiling-services path{fill:none;stroke:#171b1b;stroke-width:1;stroke-dasharray:3 3}.cave-return-wall rect,.cave-plant-room rect{fill:#f7f5ef;stroke:#171b1b;stroke-width:1.2}.cave-return-wall path,.cave-plant-room path,.cave-floor-rails path{fill:none;stroke:#32423f;stroke-width:1.1}.cave-floor-rails{opacity:.42}.section-building{filter:drop-shadow(0 7px 7px rgba(24,33,31,.08))}.section-building path,.section-building rect,.section-building circle{vector-effect:non-scaling-stroke}.section-caption rect{filter:drop-shadow(0 6px 10px rgba(24,33,31,.08))}.sensor-node{cursor:grab;outline:none}.sensor-node:active{cursor:grabbing}.sensor-node:focus rect:first-of-type{stroke:#c5522f;stroke-width:3}.sensor-id{font-size:11px;font-weight:700}.sensor-value{font-size:10px;fill:#9f4e35}.cave-legend{display:flex;align-items:center;gap:18px;padding:0 14px;border-top:1px solid var(--line);background:var(--paper);white-space:normal;overflow:visible;flex-wrap:wrap}.cave-legend span{display:flex;align-items:center;gap:6px;font:600 10.5px "Times New Roman",Times,serif;color:var(--muted)}.cave-legend i{display:inline-block}.sensor-dot{width:9px;height:9px;border-radius:1px;background:var(--teal);box-shadow:0 0 0 2px #fff,0 0 0 3px var(--teal)}.airflow-line{width:22px;border-top:1px dashed var(--teal)}.cave-model-caveat{display:flex;align-items:center;padding:0 14px;border-top:1px solid rgba(26,29,33,.08);background:#f7f5f0;color:#6b6e73;font:600 10px "Times New Roman",Times,serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}@media(max-width:1500px){.cave-section-wrap{grid-template-rows:minmax(0,1fr) 30px 25px}.cave-legend{gap:12px}.cave-legend span{font-size:10px}.cave-model-caveat{font-size:9.5px}}@media(prefers-reduced-motion:reduce){.cave-section animateMotion{display:none}}
+.cave-section-wrap{
+  height:100%;
+  min-height:0;
+  display:grid;
+  grid-template-rows:50px minmax(0,1fr) 46px;
+  background:
+    linear-gradient(135deg, rgba(255,253,247,.72), rgba(233,240,235,.72)),
+    #edf1ec;
+  overflow:hidden;
+  border-top:1px solid rgba(28,52,47,.13);
+}
+
+.cave-section-info{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:0;
+  border-bottom:1px solid rgba(28,52,47,.14);
+  background:
+    linear-gradient(90deg, rgba(15,111,102,.08), transparent 34%, rgba(191,90,58,.055) 100%),
+    #fbfbf6;
+}
+
+.cave-section-info article{
+  min-width:0;
+  display:grid;
+  align-content:center;
+  gap:2px;
+  padding:9px 20px 8px;
+  border-right:1px solid rgba(28,52,47,.12);
+}
+
+.cave-section-info article:last-child{
+  border-right:0;
+}
+
+.cave-section-info span{
+  color:#0f6f66;
+  font:850 11.5px/1 "Times New Roman",Times,serif;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+}
+
+.cave-section-info b{
+  min-width:0;
+  color:#1b2e2a;
+  font:750 14px/1.05 "Times New Roman",Times,serif;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.cave-section{
+  width:100%;
+  height:100%;
+  min-height:0;
+  display:block;
+  background:
+    radial-gradient(circle at 18% 17%, rgba(191,90,58,.12), transparent 21%),
+    radial-gradient(circle at 82% 12%, rgba(15,111,102,.12), transparent 24%),
+    linear-gradient(180deg,rgba(255,255,255,.32),rgba(255,255,255,.02)),
+    #edf1ec;
+}
+
+.cave-chamber-image{
+  opacity:.86;
+}
+
+.cave-model-image{
+  filter:drop-shadow(0 16px 18px rgba(22,34,32,.15));
+}
+
+.cave-smoke-layer{
+  pointer-events:none;
+  mix-blend-mode:multiply;
+}
+
+.cave-smoke-layer path{
+  fill:none;
+  stroke:#b8793f;
+  stroke-width:1.15;
+  stroke-linecap:round;
+  stroke-dasharray:1 8;
+  opacity:.42;
+  animation:cave-smoke-fall 6.8s linear infinite;
+}
+
+.cave-smoke-layer path:nth-child(odd){
+  animation-duration:8.5s;
+  opacity:.34;
+}
+
+.cave-flow-layer{
+  pointer-events:none;
+}
+
+.cave-flow-layer path{
+  fill:none;
+  stroke:#0e6f72;
+  stroke-width:1.55;
+  stroke-linecap:round;
+  stroke-dasharray:7 9;
+  opacity:.58;
+  animation:cave-flow-dash 18s linear infinite;
+}
+
+.cave-flow-layer path:nth-child(3),
+.cave-flow-layer path:nth-child(4){
+  opacity:.44;
+  stroke-width:1.35;
+  animation-duration:23s;
+}
+
+.cave-flow-layer circle{
+  fill:#0e6f72;
+  opacity:.66;
+}
+
+.cave-section-tags rect{
+  fill:rgba(255,253,247,.86);
+  stroke:rgba(35,67,60,.2);
+  stroke-width:1;
+}
+
+.cave-section-tags text{
+  font-family:"Times New Roman",Times,serif;
+  fill:#1b2e2a;
+  letter-spacing:.02em;
+}
+
+.cave-section-tags text:first-of-type{
+  font-size:11px;
+  font-weight:800;
+  text-transform:uppercase;
+}
+
+.cave-section-tags text:nth-of-type(2){
+  font-size:10px;
+  font-weight:650;
+  fill:#61736d;
+}
+
+.sensor-node{
+  cursor:grab;
+  outline:none;
+  pointer-events:auto;
+}
+
+.sensor-node:active{
+  cursor:grabbing;
+}
+
+.sensor-node path{
+  fill:none;
+  stroke:#344540;
+  stroke-width:1.25;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+}
+
+.sensor-mount{
+  opacity:.82;
+}
+
+.sensor-mount-ceiling{
+  stroke:#52645f;
+  stroke-dasharray:3 3;
+}
+
+.sensor-mount-floor,
+.sensor-mount-return,
+.sensor-mount-internal{
+  stroke:#263832;
+}
+
+.sensor-node text{
+  font-family:"Times New Roman",Times,serif;
+  font-size:7.7px;
+  font-weight:800;
+  fill:#fffdf8;
+  stroke:none;
+  paint-order:normal;
+  pointer-events:none;
+}
+
+.sensor-node.active circle:first-child{
+  opacity:.26;
+}
+
+.sensor-node.active circle:nth-of-type(2),
+.sensor-node:focus circle:nth-of-type(1){
+  stroke-width:3;
+}
+
+.cave-legend{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px 20px;
+  padding:0 20px;
+  border-top:1px solid rgba(28,52,47,.16);
+  background:
+    linear-gradient(90deg, rgba(15,111,102,.08), transparent 44%, rgba(191,90,58,.055)),
+    #f8f8f3;
+  white-space:normal;
+  overflow:hidden;
+  flex-wrap:wrap;
+}
+
+.cave-legend span{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font:800 13px/1 "Times New Roman",Times,serif;
+  color:#4a5e57;
+}
+
+.cave-legend i{
+  display:inline-block;
+  flex:0 0 auto;
+}
+
+.sensor-dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#0f766e;
+  box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(15,118,110,.45);
+}
+
+.sensor-dot-pm{background:#bf5a3a;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(191,90,58,.45)}
+.sensor-dot-nox{background:#8a5f7e;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(138,95,126,.45)}
+.sensor-dot-co2{background:#0f766e;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(15,118,110,.45)}
+.sensor-dot-t{background:#a87424;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(168,116,36,.45)}
+.sensor-dot-rh{background:#3d6f95;box-shadow:0 0 0 2px #fff,0 0 0 3px rgba(61,111,149,.45)}
+
+.airflow-line{
+  width:25px;
+  border-top:2px dashed #0e6f72;
+}
+
+@keyframes cave-flow-dash{
+  to{stroke-dashoffset:-72}
+}
+
+@keyframes cave-smoke-fall{
+  0%{stroke-dashoffset:0;opacity:.2}
+  45%{opacity:.44}
+  100%{stroke-dashoffset:-56;opacity:.2}
+}
+
+@media(max-width:1500px){
+  .cave-section-wrap{
+    grid-template-rows:42px minmax(0,1fr) 36px;
+  }
+  .cave-section-info article{padding:7px 11px 6px}
+  .cave-section-info span{font-size:9px}
+  .cave-section-info b{font-size:10.5px}
+  .cave-section-tags text:first-of-type{font-size:9.5px}
+  .cave-section-tags text:nth-of-type(2){font-size:8.8px}
+  .sensor-node text{font-size:7.1px}
+  .cave-legend{
+    gap:9px;
+    padding-inline:12px;
+  }
+  .cave-legend span{
+    font-size:10.5px;
+  }
+}
+
+@media(prefers-reduced-motion:reduce){
+  .cave-flow-layer path,
+  .cave-smoke-layer path{
+    animation:none;
+  }
+  .cave-section animateMotion{
+    display:none;
+  }
+}
