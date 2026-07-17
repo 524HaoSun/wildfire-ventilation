@@ -416,25 +416,10 @@ function BootHeroVisual() {
     <img className="boot-hero-image" src={caveHero3dUrl} alt="UCL CAVE controlled-environment chamber with a test volume, wildfire-smoke plume, sensors, HVAC services and mitigation equipment" />
     <div className="boot-hero-vignette" aria-hidden="true" />
     <div className="boot-chamber-smoke" aria-hidden="true"><i /><i /><i /></div>
-    <div className="boot-hero-label">
-      <span>UCL CAVE Research Group</span>
-      <b>Urban Air Quality and Fluid Mechanics</b>
-      <small>Full-scale chamber · wildfire smoke mitigation</small>
-    </div>
-    <div className="boot-hero-status-card" aria-hidden="true">
-      <span>Chamber setup</span>
-      <b>Smoke challenge contained</b>
-      <small>Sensor array · filtration response · airflow control</small>
-    </div>
-    <div className="boot-hero-provenance" aria-hidden="true">
-      <span>WILDFIRE SMOKE MITIGATION</span>
-      <b>PM · CO₂ tracer · ventilation strategy</b>
-    </div>
   </figure>;
 }
 
 function EnteringPage({ onEnter }: { onEnter: () => void }) {
-  const [skipped, setSkipped] = useState(false);
   const enteringRef = useRef(false);
   const onEnterRef = useRef(onEnter);
   onEnterRef.current = onEnter;
@@ -451,24 +436,20 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
     window.addEventListener("keydown", handleEnter);
     return () => window.removeEventListener("keydown", handleEnter);
   }, [beginEnter]);
-  return <main className={`entry-page boot-page ${skipped ? "boot-skipped" : ""}`}>
+  return <main className="entry-page boot-page">
     <div className="boot-smoke-field" aria-hidden="true"><i /><i /><i /></div>
-    <button className="boot-skip" onClick={() => setSkipped(true)}>Reveal complete plate</button>
     <header className="entry-header">
-      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE Wildfire</span><i>/</i><small>Smoke Mitigation</small></div>
-      <div className="entry-meta"><span>Research Fellow Interview</span><span>9 July 2026</span></div>
+      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE interview</span><i>/</i><small>Wildfire Smoke Mitigation Demo</small></div>
+      <div className="entry-meta"><span>Research Fellow Interview</span><span>20 July 2026</span></div>
     </header>
     <div className="boot-layout" aria-label="CAVE Experiment Workbench instrument boot sequence">
       <section className="entry-copy">
-        <div className="entry-kicker"><span>01</span> Faculty of Engineering Sciences · CEGE</div>
-        <div className="boot-wordmark">Research Fellow in Wildfire Smoke Mitigation</div>
-        <h1><span>Wildfire Smoke</span><span>Mitigation Demo</span><em>Research Fellow Interview</em></h1>
-        <p className="entry-thesis">Dr Hao Sun · 9 July 2026</p>
-        <p className="entry-summary">For the UCL CAVE Urban Air Quality and Fluid Mechanics Research Group. Full-scale experiments for wildfire smoke exposure, pollutant ingress, indoor transport and building protection strategies.</p>
-        <div className="entry-proof-grid" aria-label="Workbench evidence scope">
-          <span><b>Full-scale</b> building-within-building chamber</span>
-          <span><b>Wildfire</b> smoke and air quality hazards</span>
-          <span><b>Mitigation</b> ventilation and filtration strategies</span>
+        <h1><span>Wildfire Smoke Mitigation Demo</span><em>Research Fellow Interview</em></h1>
+        <p className="entry-thesis">Dr Hao Sun · 20 July 2026</p>
+        <div className="entry-context-strip" aria-label="Demo research context">
+          <span>UCL CAVE chamber</span>
+          <span>Wildfire smoke ingress</span>
+          <span>Ventilation response</span>
         </div>
         <a
           className="entry-button"
@@ -482,15 +463,8 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
       </section>
       <section className="boot-instrument">
         <div className="boot-section"><BootHeroVisual /></div>
-        <div className="boot-readout" aria-live="polite">
-          <p style={{ "--boot-order": 0 } as React.CSSProperties}>Boundary-condition provenance</p>
-          <p style={{ "--boot-order": 1 } as React.CSSProperties}>NEW YORK · 07 JUN 2023 · PM₂.₅ peak 410.1 µg/m³ <b>MEASURED</b></p>
-          <p style={{ "--boot-order": 2 } as React.CSSProperties}>LONDON · 19 JUL 2022 · 40.3 °C · O₃ 142 µg/m³ <b>MEASURED</b></p>
-          <div className="boot-progress"><i /></div><span>2 measured events · UCL CAVE experiment workflow</span>
-        </div>
       </section>
     </div>
-    <footer className="entry-footer"><span>Measure</span><i /><span>Design</span><i /><span>Replay</span><i /><span>Decide</span><b>01—04</b></footer>
   </main>;
 }
 
