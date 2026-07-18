@@ -7779,3 +7779,205 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   background:rgba(255,253,247,.16)!important;
   color:#fffdf7!important;
 }
+
+/* Micro-interaction polish: non-layout effects that make the workbench feel instrumented. */
+.panel{
+  overflow:hidden;
+}
+.panel::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  opacity:0;
+  background:
+    linear-gradient(115deg,transparent 0 38%,rgba(15,108,98,.055) 47%,transparent 57%),
+    radial-gradient(circle at 78% 0,rgba(182,77,50,.055),transparent 34%);
+  transform:translateX(-12%);
+  transition:opacity 220ms var(--ease-out),transform 520ms var(--ease-out);
+}
+.panel:hover::after,
+.panel:focus-within::after{
+  opacity:1;
+  transform:translateX(0);
+}
+.panel-header,
+.panel-body,
+.metric-band,
+.forecast-map-stage,
+.forecast-command-body,
+.forecast-action-timeline,
+.forecast-alert-output,
+.analysis-content,
+.guidance-body,
+.run-response-body,
+.run-replay-strip{
+  position:relative;
+  z-index:1;
+}
+.primary-button,
+.secondary-button,
+.segmented button,
+.life-button,
+.map-focus-controls button,
+.forecast-action-timeline article,
+.forecast-alert-output article,
+.guidance-phases button,
+.tradeoff-grid button,
+.strategy-row,
+.sensor-tile,
+.building-selector button{
+  will-change:transform;
+}
+.primary-button:hover,
+.secondary-button:hover,
+.segmented button:hover,
+.map-focus-controls button:hover,
+.forecast-action-timeline article:hover,
+.guidance-phases button:hover,
+.tradeoff-grid button:hover,
+.strategy-row:hover,
+.sensor-tile:hover,
+.building-selector button:hover{
+  transform:translateY(-1px);
+}
+.primary-button svg:last-child,
+.entry-button svg,
+.life-button .life-index{
+  transition:transform 180ms var(--ease-out);
+}
+.primary-button:hover svg:last-child,
+.entry-button:hover svg{
+  transform:translateX(4px);
+}
+.life-step.active .life-button{
+  animation:micro-active-breathe 3.2s ease-in-out infinite;
+}
+.life-step.done .life-index{
+  box-shadow:0 0 0 4px rgba(15,108,98,.06);
+}
+.scientific-chart{
+  isolation:isolate;
+}
+.scientific-chart::after{
+  content:"";
+  position:absolute;
+  left:7%;
+  right:3%;
+  top:18%;
+  bottom:13%;
+  pointer-events:none;
+  opacity:0;
+  background:linear-gradient(90deg,transparent,rgba(15,108,98,.055),transparent);
+  transform:translateX(-18%);
+  transition:opacity 180ms var(--ease-out),transform 520ms var(--ease-out);
+  z-index:0;
+}
+.scientific-chart:hover::after,
+.scientific-chart:focus-within::after{
+  opacity:1;
+  transform:translateX(0);
+}
+.case-route-map .route-core{
+  stroke-dasharray:12 12;
+  animation:micro-route-drift 7.5s linear infinite;
+}
+.case-route-map .route-ring,
+.forecast-receptors g.selected .forecast-receptor-ring,
+.forecast-eta-rings circle{
+  transform-box:fill-box;
+  transform-origin:center;
+}
+.case-route-map .route-ring-outer{
+  animation:micro-ring-breathe 3.4s ease-in-out infinite;
+}
+.forecast-smoke-corridors path{
+  stroke-dasharray:18 18;
+  animation:forecast-route-flow 16s linear infinite;
+}
+.forecast-fire-clusters .fire-halo{
+  transform-box:fill-box;
+  transform-origin:center;
+  animation:forecast-fire-pulse 3s ease-in-out infinite;
+}
+.forecast-receptors g.selected .forecast-receptor-ring{
+  animation:micro-ring-breathe 2.6s ease-in-out infinite;
+}
+.forecast-receptors g{
+  outline:none;
+}
+.forecast-receptors g:focus-visible .forecast-receptor-ring{
+  stroke-width:3;
+  filter:drop-shadow(0 0 6px rgba(15,108,98,.38));
+}
+.forecast-action-timeline article.active>div,
+.guidance-phases button.active,
+.sensor-tile.selected,
+.building-selector button.active{
+  box-shadow:inset 0 4px 0 #0f6c62,0 10px 22px rgba(15,108,98,.10)!important;
+}
+.forecast-alert-output article:hover,
+.forecast-kpis article:hover,
+.guidance-current-summary article:hover,
+.run-brief-card:hover,
+.metric:hover{
+  background-image:linear-gradient(180deg,rgba(255,253,247,.98),rgba(240,248,244,.92));
+}
+input[type="range"]{
+  accent-color:#0f6c62;
+}
+input[type="range"]::-webkit-slider-thumb{
+  box-shadow:0 0 0 5px rgba(15,108,98,.12),0 5px 12px rgba(15,108,98,.18);
+}
+input[type="range"]:focus-visible::-webkit-slider-thumb,
+input[type="range"]:hover::-webkit-slider-thumb{
+  box-shadow:0 0 0 7px rgba(15,108,98,.18),0 7px 16px rgba(15,108,98,.22);
+}
+.run-replay-strip .transport,
+.timeline .transport{
+  transition:transform 170ms var(--ease-out),background 170ms var(--ease-out),box-shadow 170ms var(--ease-out);
+}
+.run-replay-strip .transport:hover,
+.timeline .transport:hover{
+  box-shadow:0 0 0 5px rgba(15,108,98,.10);
+}
+.strategy-row.previewed .strategy-fill,
+.strategy-row.recommended .strategy-fill{
+  position:relative;
+  overflow:hidden;
+}
+.strategy-row.previewed .strategy-fill::after,
+.strategy-row.recommended .strategy-fill::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(90deg,transparent,rgba(255,253,247,.45),transparent);
+  animation:micro-fill-scan 2.8s ease-in-out infinite;
+}
+@keyframes micro-active-breathe{
+  0%,100%{box-shadow:inset 0 3px 0 rgba(255,253,247,.22),0 10px 22px rgba(15,108,98,.18)}
+  50%{box-shadow:inset 0 3px 0 rgba(255,253,247,.28),0 14px 26px rgba(15,108,98,.25)}
+}
+@keyframes micro-route-drift{
+  to{stroke-dashoffset:-96}
+}
+@keyframes micro-ring-breathe{
+  0%,100%{opacity:.48;transform:scale(1)}
+  50%{opacity:.86;transform:scale(1.08)}
+}
+@keyframes micro-fill-scan{
+  0%{transform:translateX(-110%)}
+  58%,100%{transform:translateX(110%)}
+}
+@media (prefers-reduced-motion: reduce){
+  .life-step.active .life-button,
+  .case-route-map .route-core,
+  .case-route-map .route-ring-outer,
+  .forecast-smoke-corridors path,
+  .forecast-fire-clusters .fire-halo,
+  .forecast-receptors g.selected .forecast-receptor-ring,
+  .strategy-row.previewed .strategy-fill::after,
+  .strategy-row.recommended .strategy-fill::after{
+    animation:none!important;
+  }
+}
