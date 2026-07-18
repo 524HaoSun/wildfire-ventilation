@@ -7988,6 +7988,69 @@ input[type="range"]:hover::-webkit-slider-thumb{
   }
 }
 
+/* Forecast warning visual hard fix: never let the text card collapse into a clipped strip. */
+.forecast-command-body{
+  grid-template-rows:auto auto auto 214px!important;
+}
+.forecast-handoff-visual{
+  height:214px!important;
+  min-height:214px!important;
+  display:block!important;
+  overflow:hidden!important;
+}
+.forecast-handoff-visual img{
+  height:100%!important;
+  min-height:214px!important;
+}
+.handoff-overlay{
+  top:50%!important;
+  left:22px!important;
+  bottom:auto!important;
+  transform:translateY(-50%)!important;
+  width:min(430px,64%)!important;
+  min-height:0!important;
+  max-height:calc(100% - 36px)!important;
+  padding:16px 18px!important;
+  overflow:visible!important;
+  display:block!important;
+}
+.handoff-overlay span{
+  font-size:13px!important;
+  line-height:1.05!important;
+}
+.handoff-overlay b{
+  margin-top:8px!important;
+  font-size:clamp(18px,1.45vw,23px)!important;
+  line-height:1.12!important;
+}
+
+@media(max-width:1500px),(max-height:850px){
+  .forecast-command-body{
+    grid-template-rows:auto auto auto 168px!important;
+  }
+  .forecast-handoff-visual{
+    height:168px!important;
+    min-height:168px!important;
+  }
+  .forecast-handoff-visual img{
+    min-height:168px!important;
+  }
+  .handoff-overlay{
+    left:14px!important;
+    width:min(340px,66%)!important;
+    max-height:calc(100% - 24px)!important;
+    padding:11px 13px!important;
+  }
+  .handoff-overlay span{
+    font-size:10.5px!important;
+  }
+  .handoff-overlay b{
+    margin-top:6px!important;
+    font-size:clamp(14px,1.2vw,17px)!important;
+    line-height:1.12!important;
+  }
+}
+
 /* Final visual QA guardrails for 900px-tall preview screens. */
 @media(max-height:920px){
   .grid-challenge .event-explorer>.panel-body{
