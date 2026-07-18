@@ -239,9 +239,10 @@
   width:88px;
   height:74px;
   pointer-events:none;
-  border:1px solid rgba(31,59,53,.14);
-  background:rgba(255,253,247,.76);
-  box-shadow:0 8px 18px rgba(31,59,53,.08);
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  filter:drop-shadow(0 1px 1px rgba(255,253,247,.95)) drop-shadow(0 4px 8px rgba(31,59,53,.18));
 }
 .scene-axis:before,
 .scene-axis:after{
@@ -289,8 +290,8 @@
   font:800 12px/1 "Times New Roman",Times,serif;
   font-style:normal;
   padding:1px 3px;
-  background:rgba(255,253,247,.82);
-  text-shadow:0 1px 0 #fffdf7;
+  background:transparent;
+  text-shadow:0 1px 0 #fffdf7,0 -1px 0 #fffdf7,1px 0 0 #fffdf7,-1px 0 0 #fffdf7,0 3px 8px rgba(31,59,53,.22);
 }
 .axis-x{right:5px;top:20px;color:#bd5135}
 .axis-y{left:15px;top:-1px;color:#0f746b}
@@ -376,7 +377,7 @@
   right:20px;
   bottom:68px;
   z-index:6;
-  background:rgba(255,253,247,.88);
+  background:transparent;
 }
 .building-scene[data-run-mode="true"] .scene-identity span,
 .building-scene[data-run-mode="true"] .scene-instruction,
