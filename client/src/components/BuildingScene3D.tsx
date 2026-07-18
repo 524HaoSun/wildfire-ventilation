@@ -1077,7 +1077,14 @@ export function BuildingScene3D({
       <div className="scene-canvas-mount" ref={mountRef} />
       {fallback && <div className="scene-fallback"><ScanLine size={22} /><b>WebGL unavailable</b><span>The numerical experiment remains active.</span></div>}
       {runMode && externalSmokeIntensity > .015 && <div className="external-chamber-smoke" style={{ "--smoke-strength": Math.min(.12, externalSmokeIntensity * .12) } as React.CSSProperties} aria-hidden="true"><i /><i /></div>}
-      <div className="scene-axis"><i className="axis-x">X</i><i className="axis-y">Y</i><i className="axis-z">Z</i></div>
+      <div className="scene-axis" aria-hidden="true">
+        <span className="axis-line axis-line-x" />
+        <span className="axis-line axis-line-y" />
+        <span className="axis-line axis-line-z" />
+        <i className="axis-x">X</i>
+        <i className="axis-y">Y</i>
+        <i className="axis-z">Z</i>
+      </div>
       <div className="scene-instruction">Drag to orbit · Wheel to zoom · Select a sensor</div>
       {!runMode && <div className="scene-layer-tags" aria-hidden="true"><span><i />2D section registration</span><span><i />CAVE envelope</span><span><i />Smoke challenge volume</span><span><i />Sensor field</span></div>}
       {!runMode && <div className="scene-facility-readout"><span>UCL CAVE hall</span><b>206 m² · 9 m clear</b><small>Dual HVAC · exterior -5 to 43 °C<br />Interior setpoint 10 to 28 °C</small></div>}

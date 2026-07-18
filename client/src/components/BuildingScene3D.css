@@ -234,33 +234,67 @@
   box-shadow:0 0 0 3px rgba(211,160,56,.2);
 }
 .scene-axis{
-  right:22px;
-  bottom:18px;
-  width:54px;
-  height:48px;
+  right:18px;
+  bottom:16px;
+  width:88px;
+  height:74px;
   pointer-events:none;
+  border:1px solid rgba(31,59,53,.14);
+  background:rgba(255,253,247,.76);
+  box-shadow:0 8px 18px rgba(31,59,53,.08);
 }
 .scene-axis:before,
 .scene-axis:after{
+  content:none;
+}
+.axis-line{
+  position:absolute;
+  left:24px;
+  bottom:24px;
+  height:2px;
+  border-radius:99px;
+  transform-origin:left center;
+}
+.axis-line::after{
   content:"";
   position:absolute;
-  left:19px;
-  bottom:10px;
-  width:31px;
-  height:1px;
-  background:#415a54;
-  transform-origin:left;
+  right:-1px;
+  top:50%;
+  width:7px;
+  height:7px;
+  border-top:2px solid currentColor;
+  border-right:2px solid currentColor;
+  transform:translateY(-50%) rotate(45deg);
 }
-.scene-axis:before{transform:rotate(-28deg)}
-.scene-axis:after{transform:rotate(28deg)}
+.axis-line-x{
+  width:31px;
+  color:#bd5135;
+  background:#bd5135;
+  transform:rotate(-22deg);
+}
+.axis-line-y{
+  width:30px;
+  color:#0f746b;
+  background:#0f746b;
+  transform:rotate(-90deg);
+}
+.axis-line-z{
+  width:29px;
+  color:#5d706a;
+  background:#5d706a;
+  transform:rotate(36deg);
+}
 .scene-axis i{
   position:absolute;
-  font:800 11.5px/1 "Times New Roman",Times,serif;
+  font:800 12px/1 "Times New Roman",Times,serif;
   font-style:normal;
+  padding:1px 3px;
+  background:rgba(255,253,247,.82);
+  text-shadow:0 1px 0 #fffdf7;
 }
-.axis-x{right:0;top:5px;color:#bd5135}
-.axis-y{left:17px;top:0;color:#0f746b}
-.axis-z{right:0;bottom:0;color:#5d706a}
+.axis-x{right:5px;top:20px;color:#bd5135}
+.axis-y{left:15px;top:-1px;color:#0f746b}
+.axis-z{right:8px;bottom:4px;color:#5d706a}
 .scene-specs{
   display:grid;
   grid-template-columns:repeat(4,minmax(0,1fr));
@@ -338,8 +372,13 @@
 .building-scene[data-run-mode="true"] .scene-toolbar{
   padding-inline:12px;
 }
+.building-scene[data-run-mode="true"] .scene-axis{
+  right:20px;
+  bottom:68px;
+  z-index:6;
+  background:rgba(255,253,247,.88);
+}
 .building-scene[data-run-mode="true"] .scene-identity span,
-.building-scene[data-run-mode="true"] .scene-axis,
 .building-scene[data-run-mode="true"] .scene-instruction,
 .building-scene[data-run-mode="true"] .scene-layer-tags,
 .building-scene[data-run-mode="true"] .scene-facility-readout{
