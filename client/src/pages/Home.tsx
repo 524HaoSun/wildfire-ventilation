@@ -666,14 +666,6 @@ function ForecastScreen() {
                 <circle cx="500" cy="121" r="42" />
                 <circle cx="920" cy="386" r="40" />
               </g>
-              <g className="forecast-time-gates">
-                <path d="M294 84 V226" />
-                <path d="M500 68 V190" />
-                <path d="M920 330 V444" />
-                <text x="304" y="86">T-22h receptor watch</text>
-                <text x="510" y="70">T-36h advisory</text>
-                <text x="782" y="334">T-18h Pacific alert</text>
-              </g>
               <g className="forecast-fire-clusters">
                 {firePoints.map((point, index) => <g key={index} className={`fire-cluster fire-${index % 3}`} transform={`translate(${point.x.toFixed(1)} ${point.y.toFixed(1)})`}><circle className="fire-halo" r={point.size} /><circle className="fire-dot" r={Math.max(5, point.size * .34)} /></g>)}
               </g>
@@ -681,7 +673,6 @@ function ForecastScreen() {
                 {alertPoints.map((alert) => <g key={alert.city} role="button" tabIndex={0} onClick={() => setSelectedCity(alert.city)} onKeyDown={(event) => { if (event.key === "Enter" || event.key === " ") setSelectedCity(alert.city); }} transform={`translate(${alert.x.toFixed(1)} ${alert.y.toFixed(1)})`} className={alert.city === selected.city ? "selected" : ""}>
                   <circle r="10" />
                   <text x="16" y="-8">{alert.city}</text>
-                  <text x="16" y="10">{alert.eta} · {alert.level}</text>
                 </g>)}
               </g>
             </svg>
@@ -714,7 +705,7 @@ function ForecastScreen() {
             <img src={forecastWarningUrl} alt="" />
             <div className="handoff-overlay">
               <span>Early warning layer</span>
-              <b>Global fire signals become local protective action windows.</b>
+              <b>Global fire signals become local action windows.</b>
             </div>
           </div>
         </div>
