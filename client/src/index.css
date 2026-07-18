@@ -7298,32 +7298,6 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
     linear-gradient(90deg,rgba(255,253,247,.88),rgba(255,253,247,.25) 42%,rgba(255,253,247,.04)),
     linear-gradient(180deg,rgba(15,108,98,.08),transparent 52%);
 }
-.handoff-overlay{
-  position:absolute;
-  left:18px;
-  top:54%;
-  right:auto;
-  bottom:auto;
-  transform:translateY(-50%);
-  width:min(420px,62%);
-  z-index:1;
-  border-left:4px solid #0f6c62;
-  background:rgba(255,253,247,.94);
-  padding:13px 15px 14px;
-  box-shadow:0 10px 24px rgba(31,59,53,.10);
-}
-.handoff-overlay span{
-  display:block;
-  font:700 12px/1 var(--font-editorial);
-  color:#5d6b66;
-}
-.handoff-overlay b{
-  display:block;
-  margin-top:7px;
-  font:700 clamp(16px,1.35vw,20px)/1.13 var(--font-editorial);
-  color:#000;
-  overflow-wrap:normal;
-}
 .forecast-action-timeline{
   flex:1;
   min-height:0;
@@ -7988,7 +7962,7 @@ input[type="range"]:hover::-webkit-slider-thumb{
   }
 }
 
-/* Forecast warning visual hard fix: never let the text card collapse into a clipped strip. */
+/* Forecast warning visual: pure image banner, no clipped text overlay. */
 .forecast-command-body{
   grid-template-rows:auto auto auto 214px!important;
 }
@@ -8002,27 +7976,7 @@ input[type="range"]:hover::-webkit-slider-thumb{
   height:100%!important;
   min-height:214px!important;
 }
-.handoff-overlay{
-  top:50%!important;
-  left:22px!important;
-  bottom:auto!important;
-  transform:translateY(-50%)!important;
-  width:min(430px,64%)!important;
-  min-height:0!important;
-  max-height:calc(100% - 36px)!important;
-  padding:16px 18px!important;
-  overflow:visible!important;
-  display:block!important;
-}
-.handoff-overlay span{
-  font-size:13px!important;
-  line-height:1.05!important;
-}
-.handoff-overlay b{
-  margin-top:8px!important;
-  font-size:clamp(18px,1.45vw,23px)!important;
-  line-height:1.12!important;
-}
+.handoff-overlay{display:none!important}
 
 @media(max-width:1500px),(max-height:850px){
   .forecast-command-body{
@@ -8034,20 +7988,6 @@ input[type="range"]:hover::-webkit-slider-thumb{
   }
   .forecast-handoff-visual img{
     min-height:168px!important;
-  }
-  .handoff-overlay{
-    left:14px!important;
-    width:min(340px,66%)!important;
-    max-height:calc(100% - 24px)!important;
-    padding:11px 13px!important;
-  }
-  .handoff-overlay span{
-    font-size:10.5px!important;
-  }
-  .handoff-overlay b{
-    margin-top:6px!important;
-    font-size:clamp(14px,1.2vw,17px)!important;
-    line-height:1.12!important;
   }
 }
 

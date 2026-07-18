@@ -703,10 +703,6 @@ function ForecastScreen() {
           </div>
           <div className="forecast-handoff-visual">
             <img src={forecastWarningUrl} alt="" />
-            <div className="handoff-overlay">
-              <span>Early warning layer</span>
-              <b>Global fire signals become local action windows.</b>
-            </div>
           </div>
         </div>
       </Panel>
