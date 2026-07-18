@@ -710,9 +710,6 @@ function ForecastScreen() {
             <span>Recommended trigger</span>
             <b>{selected.trigger}</b>
           </div>
-          <div className="forecast-receptor-picker" aria-label="Select forecast receptor">
-            {FORECAST_ALERTS.map((alert) => <button type="button" key={alert.city} className={alert.city === selected.city ? "active" : ""} onClick={() => setSelectedCity(alert.city)}><span>{alert.city}</span><b>{alert.eta}</b><small>{alert.level}</small></button>)}
-          </div>
           <div className="forecast-handoff-visual">
             <img src={forecastWarningUrl} alt="" />
             <div className="handoff-overlay">
@@ -732,9 +729,9 @@ function ForecastScreen() {
       </Panel>
       <Panel className="forecast-evidence-panel" eyebrow="Interactive output" title={`${selected.city} · ${selectedAction.time} action`}>
         <div className="forecast-alert-output">
-          <article><span>Alert message</span><b>{selectedAction.title}</b><p>{selectedAction.detail}</p></article>
+          <article className="alert-primary"><span>Alert message</span><b>{selectedAction.title}</b><p>{selectedAction.detail}</p></article>
           <article><span>ETA state</span><b>{selected.eta} · {selected.level}</b><p>{selected.distance} from receptor along the modelled smoke corridor.</p></article>
-          <article><span>Decision point</span><b>{selected.action}</b><p>{selected.trigger}</p></article>
+          <article><span>Decision</span><b>{selected.action}</b><p>{selected.trigger}</p></article>
         </div>
       </Panel>
     </div>

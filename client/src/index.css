@@ -6952,7 +6952,7 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
 /* Forecast concept page: global fire signals translated into local warning actions. */
 .grid-forecast{
   grid-template-columns:minmax(0,1.35fr) minmax(390px,.72fr);
-  grid-template-rows:minmax(0,1fr) 200px;
+  grid-template-rows:minmax(0,1fr) 248px;
 }
 .forecast-map-panel{
   grid-column:1;
@@ -7159,7 +7159,7 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   min-height:0;
   padding:13px;
   display:grid;
-  grid-template-rows:auto auto auto auto minmax(0,1fr);
+  grid-template-rows:auto auto auto minmax(0,1fr);
   align-content:stretch;
   gap:10px;
 }
@@ -7221,15 +7221,16 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
 }
 .forecast-threshold{
   align-self:stretch;
-  display:grid;
-  align-content:center;
+  display:block;
   gap:6px;
   border:1px solid rgba(182,77,50,.22);
   background:linear-gradient(90deg,#fff7f2,#f4fbf6);
-  padding:11px 12px;
+  padding:12px 14px;
 }
 .forecast-threshold b{
-  font:700 15px/1.2 var(--font-editorial);
+  display:block;
+  margin-top:6px;
+  font:700 14px/1.28 var(--font-editorial);
   color:#000;
 }
 .forecast-receptor-picker{
@@ -7427,10 +7428,149 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   color:#000;
 }
 
+/* Forecast v2: timeline rail and compact alert output. */
+.forecast-action-timeline{
+  padding:18px 20px 14px!important;
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:9px!important;
+  align-items:stretch!important;
+  position:relative!important;
+  isolation:isolate!important;
+}
+.forecast-action-timeline::before{
+  content:"";
+  position:absolute;
+  left:32px;
+  right:32px;
+  top:62px;
+  height:24px;
+  border:1px solid rgba(31,59,53,.14);
+  background:
+    linear-gradient(90deg,
+      rgba(111,159,151,.18) 0 24%,
+      rgba(194,139,72,.22) 24% 49%,
+      rgba(182,77,50,.30) 49% 74%,
+      rgba(178,138,47,.24) 74% 100%),
+    repeating-linear-gradient(90deg,transparent 0 22px,rgba(255,253,247,.45) 22px 23px);
+  box-shadow:inset 0 5px 14px rgba(31,59,53,.08),0 8px 18px rgba(31,59,53,.04);
+  z-index:0;
+}
+.forecast-action-timeline article{
+  border:0!important;
+  background:transparent!important;
+  padding:0!important;
+  display:grid!important;
+  grid-template-rows:72px minmax(0,1fr)!important;
+  text-align:center!important;
+  align-items:start!important;
+  position:relative!important;
+  z-index:1!important;
+}
+.forecast-action-timeline article::before{
+  left:50%!important;
+  right:auto!important;
+  top:64px!important;
+  width:18px!important;
+  height:18px!important;
+  transform:translate(-50%,-50%)!important;
+  border:2px solid #fffdf7!important;
+  background:#fffdf7!important;
+  z-index:1!important;
+  box-shadow:0 0 0 1px rgba(31,59,53,.22),0 5px 12px rgba(31,59,53,.12)!important;
+}
+.forecast-action-timeline article.active::before{
+  width:32px!important;
+  height:32px!important;
+  background:linear-gradient(135deg,#0f6c62,#12342f)!important;
+  border-color:#fffdf7!important;
+  box-shadow:0 0 0 5px rgba(15,108,98,.18),0 10px 20px rgba(15,108,98,.28)!important;
+}
+.forecast-action-timeline article>span{
+  align-self:start!important;
+  justify-self:center!important;
+  min-width:58px!important;
+  border:1px solid rgba(31,59,53,.13)!important;
+  background:linear-gradient(180deg,#fffef9,#f7fbf7)!important;
+  padding:6px 10px!important;
+  font:700 13px/1 var(--font-editorial)!important;
+  color:#000!important;
+  z-index:2!important;
+  box-shadow:0 6px 14px rgba(31,59,53,.06)!important;
+}
+.forecast-action-timeline article.active>span{
+  background:#0f6c62!important;
+  border-color:#0f6c62!important;
+  color:#fffdf7!important;
+}
+.forecast-action-timeline article>div{
+  border:1px solid rgba(31,59,53,.12)!important;
+  background:linear-gradient(180deg,rgba(255,253,247,.94),rgba(247,251,247,.88))!important;
+  min-height:78px!important;
+  padding:14px 12px 10px!important;
+  display:grid!important;
+  align-content:start!important;
+  box-shadow:inset 0 1px 0 rgba(255,253,247,.8)!important;
+}
+.forecast-action-timeline article:nth-child(1)>div{
+  box-shadow:inset 0 4px 0 rgba(111,159,151,.52)!important;
+}
+.forecast-action-timeline article:nth-child(2)>div{
+  box-shadow:inset 0 4px 0 rgba(194,139,72,.46)!important;
+}
+.forecast-action-timeline article:nth-child(3)>div{
+  box-shadow:inset 0 4px 0 rgba(182,77,50,.50)!important;
+}
+.forecast-action-timeline article:nth-child(4)>div{
+  box-shadow:inset 0 4px 0 rgba(178,138,47,.48)!important;
+}
+.forecast-action-timeline article.active>div{
+  border-color:#0f6c62!important;
+  background:
+    linear-gradient(180deg,rgba(232,242,237,.96),rgba(255,253,247,.96)),
+    radial-gradient(circle at 50% 0,rgba(15,108,98,.12),transparent 58%)!important;
+  box-shadow:inset 0 4px 0 #0f6c62,0 12px 22px rgba(15,108,98,.10)!important;
+}
+.forecast-action-timeline h3{
+  margin:0 0 6px!important;
+  font-size:16px!important;
+  line-height:1!important;
+}
+.forecast-action-timeline p{
+  font-size:10.5px!important;
+  line-height:1.18!important;
+}
+.forecast-action-timeline small{
+  margin-top:8px!important;
+  color:#0f6c62!important;
+}
+.forecast-alert-output{
+  padding:10px 12px!important;
+  grid-template-columns:1.15fr .85fr 1fr!important;
+  align-items:stretch!important;
+}
+.forecast-alert-output article{
+  padding:10px 10px!important;
+  align-content:center!important;
+  overflow:hidden!important;
+}
+.forecast-alert-output b{
+  font-size:16px!important;
+  line-height:1.05!important;
+}
+.forecast-alert-output p{
+  font-size:10px!important;
+  line-height:1.18!important;
+  display:-webkit-box!important;
+  -webkit-line-clamp:3!important;
+  -webkit-box-orient:vertical!important;
+  overflow:hidden!important;
+}
+
 @media(max-width:1500px),(max-height:850px){
   .grid-forecast{
     grid-template-columns:minmax(0,1.35fr) minmax(360px,.74fr);
-    grid-template-rows:minmax(0,1fr) 170px;
+    grid-template-rows:minmax(0,1fr) 220px;
   }
   .forecast-command-body{
     padding:8px 10px;
