@@ -848,13 +848,13 @@ function EnteringPage({ onEnter }: { onEnter: () => void }) {
   return <main className="entry-page boot-page">
     <div className="boot-smoke-field" aria-hidden="true"><i /><i /><i /></div>
     <header className="entry-header">
-      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE interview</span><i>/</i><small>Wildfire Smoke Mitigation Demo</small></div>
-      <div className="entry-meta"><span>Research Fellow Interview</span><span>20 July 2026</span></div>
+      <div className="entry-brand"><img src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><span>CAVE Wildfire</span><i>/</i><small>Smoke Mitigation Demo</small></div>
+      <div className="entry-meta"><span>Created by Dr Hao Sun</span><span>2026</span></div>
     </header>
     <div className="boot-layout" aria-label="CAVE Experiment Workbench instrument boot sequence">
       <section className="entry-copy">
-        <h1><span>Wildfire Smoke Mitigation Demo</span><em>Research Fellow Interview</em></h1>
-        <p className="entry-thesis">Dr Hao Sun · 20 July 2026</p>
+        <h1><span>Wildfire Smoke Mitigation Demo</span><em>Indoor Safety Workbench</em></h1>
+        <p className="entry-thesis">Created by Dr Hao Sun<br /><small>hao.sun@surrey.ac.uk / 13705161072sh@gmail.com</small></p>
         <div className="entry-context-strip" aria-label="Demo research context">
           <span>UCL CAVE chamber</span>
           <span>Wildfire smoke ingress</span>
@@ -951,9 +951,9 @@ export default function Home() {
   return <div className="experience-shell"><div className="experience-stage">
     {!entered ? <EnteringPage onEnter={() => setEntered(true)} /> : <div className="workbench">
     <header className="topbar">
-      <button className="brand brand-button" onClick={() => setEntered(false)} aria-label="Return to entering page"><img className="brand-mark" src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><div><div className="brand-wordmark">CAVE Wildfire <span>Workbench</span></div><div className="brand-subtitle">Research Fellow interview · Dr Hao Sun</div></div></button>
+      <button className="brand brand-button" onClick={() => setEntered(false)} aria-label="Return to entering page"><img className="brand-mark" src={caveMarkUrl} alt="CAVE Wildfire Workbench mark" /><div><div className="brand-wordmark">CAVE Wildfire <span>Workbench</span></div><div className="brand-subtitle">Created by Dr Hao Sun</div></div></button>
       <nav className="lifecycle" aria-label="Experiment lifecycle">{STEPS.map((label, index) => <div key={label} className={`life-step ${screen === index + 1 ? "active" : ""} ${screen > index + 1 ? "done" : ""}`}><button className="life-button" onClick={() => setScreen(index + 1)}><span className="life-index">{screen > index + 1 ? "✓" : String(index + 1).padStart(2, "0")}</span>{label}</button></div>)}</nav>
-      <div className="atlas-edition"><span>UCL CAVE</span><strong>Research demo · 2026</strong></div>
+      <div className="atlas-edition"><span>Wildfire Ventilation</span><strong>Demo · 2026</strong></div>
     </header>
     <div className="status-strip"><span><i>Case</i>{dataset.title}</span><span><i>Shared context</i>{formatTimestamp(dataset.timestamps[sharedTimestampIndex])} · {selectedSensor}</span><span><i>Modelled air change</i>{simulation.params.totalAch.toFixed(2)} h⁻¹</span>{screen === 4 && <span className="analysis-status"><i>{ANALYSIS_CHAPTERS[analysisChapter].label}</i><b>{ANALYSIS_CHAPTERS[analysisChapter].note}</b></span>}{screen === 5 && <span className="analysis-status"><i>Forecast</i><b>Global fire signals become smoke-arrival actions before local exposure.</b></span>}{simulation.gapFilled && <span className="gap-note">Interpolated evidence gap</span>}</div>
     {screen === 1 && <ChallengeScreen state={state} setState={setState} sharedMinute={sharedMinute} setSharedMinute={setSharedMinute} onAdvance={advance} />}

@@ -1418,7 +1418,7 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   .guidance-layout{grid-template-columns:minmax(0,1.22fr) minmax(410px,.78fr)}
 }
 
-/* Interview demo refinement: make the CAVE identity explicit, strengthen the
+/* Entering-page refinement: make the CAVE identity explicit, strengthen the
  * measured-event challenge, and add a contextual PM reference without implying
  * that schematic GIS marks are measured fields.
  */
@@ -2864,10 +2864,16 @@ button,input,select,textarea,svg text{font-family:var(--font-editorial)!importan
   position:relative;
   z-index:2;
   width:auto;
-  max-width:430px;
+  max-width:640px;
   margin:0;
   color:#40514b;
-  font:760 29px/1.35 var(--font-editorial);
+  font:760 26px/1.28 var(--font-editorial);
+}
+.boot-layout .entry-copy .entry-thesis small{
+  display:block;
+  margin-top:8px;
+  color:#52615c;
+  font:650 16px/1.35 var(--font-editorial);
 }
 .entry-context-strip{
   position:relative;
